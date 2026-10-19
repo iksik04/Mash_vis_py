@@ -101,10 +101,12 @@ def test3():
 
     have_ref = False
 
-    ref_center = None          # (cx, cy) центра контура в момент выбора ROI
-    ref_angle = 0.0            # угол контура в момент выбора ROI
-    roi_offset = None          # (dx, dy) — смещение центра ROI относительно центра контура
-    roi_w = roi_h = 0          # размеры ROI
+    ref_center = None       
+    roi_offset = None         
+    roi_w = roi_h = 0     
+
+    ref_frame = None     
+    prev_angle = None          
 
     while True:
         ret, frame = cap.read()
@@ -112,53 +114,29 @@ def test3():
             print("Can not get picture")
             break
 
-        # --- поиск текущего контура ---
         cur_center = None
-        cur_angle = 0.0
-        cur_cnt = None
 
-        bin_frame = f.rgb2bin(frame)
-        contours = f.external_countur_get(bin_frame)
-        if len(contours) > 0:
-            cur_cnt = contours[0]
-            rect = cv2.minAreaRect(cur_cnt)
+        bin_frame = f.rgb2bin(frame, low_threshold=160)
+        contour = f.external_countur_get(bin_frame)
+        if len(contour) > 0:
+            contour = contour[0]
+            rect = cv2.minAreaRect(contour)
             cur_center = rect[0]
-            cur_angle = rect[2]
 
-        # --- отрисовка ROI, если эталон установлен и контур найден ---
         if have_ref and cur_center is not None:
-            # смещение центра контура относительно эталона
-            dcx = cur_center[0] - ref_center[0]
-            dcy = cur_center[1] - ref_center[1]
+            d_angle = f.get_angle(ref_frame, frame)
 
-            # поворот смещения ROI на дельту угла
-            d_angle = cur_angle - ref_angle
-            rad = np.radians(d_angle)
-            cos_a, sin_a = np.cos(rad), np.sin(rad)
-            ox, oy = roi_offset
-            rot_ox = ox * cos_a - oy * sin_a
-            rot_oy = ox * sin_a + oy * cos_a
+            if prev_angle is not None:
+                while d_angle - prev_angle > 180.0:
+                    d_angle -= 360.0
+                while d_angle - prev_angle < -180.0:
+                    d_angle += 360.0
+            prev_angle = d_angle
 
-            # новый центр ROI
-            roi_cx = cur_center[0] + rot_ox
-            roi_cy = cur_center[1] + rot_oy
-
-            # поворот углов ROI на d_angle
-            half_w, half_h = roi_w / 2.0, roi_h / 2.0
-            corners = np.array([
-                [-half_w, -half_h],
-                [ half_w, -half_h],
-                [ half_w,  half_h],
-                [-half_w,  half_h],
-            ], dtype=np.float32)
-            rotated = corners @ np.array([[cos_a, sin_a], [-sin_a, cos_a]], dtype=np.float32)
-            rotated[:, 0] += roi_cx
-            rotated[:, 1] += roi_cy
-
-            pts = np.intp(rotated)
+            pts = f.get_roi_corners(roi_offset, roi_w, roi_h, cur_center, d_angle)
             cv2.polylines(frame, [pts], True, c.BLUE, 2)
 
-        f.draw_img(frame, title="Test")
+        f.draw_img(frame, title="Test", contour=contour, center=True)
 
         key = cv2.waitKey(1) & 0xFF
         if key == ord('q'):
@@ -171,13 +149,14 @@ def test3():
             roi_cx = roi_x0 + roi_w / 2
             roi_cy = roi_y0 + roi_h / 2
 
-            ref_bin_frame = f.rgb2bin(frame)
+            ref_bin_frame = f.rgb2bin(frame, low_threshold=160)
             ref_contours = f.external_countur_get(ref_bin_frame)
             if len(ref_contours) > 0 and roi_w > 0 and roi_h > 0:
                 ref_rect = cv2.minAreaRect(ref_contours[0])
                 ref_center = ref_rect[0]
-                ref_angle = ref_rect[2]
                 roi_offset = (roi_cx - ref_center[0], roi_cy - ref_center[1])
+                ref_frame = frame.copy()
+                prev_angle = None
                 have_ref = True
             else:
                 have_ref = False
