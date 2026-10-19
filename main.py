@@ -7,7 +7,7 @@ import tests as t
 
 
 def main():
-    t.test1()
+    t.test2()
 
 if __name__ == "__main__":
     main()

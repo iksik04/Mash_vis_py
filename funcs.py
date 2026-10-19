@@ -17,10 +17,9 @@ def external_countur_get(bin_img):
         length = cv2.arcLength(cnt, True)  # True = контур замкнут
         if length >= c.MIN_EXT_CONTOUR_LENGTH:
             filtered_contours.append(cnt)
-
     return filtered_contours
 
-def draw_img(image, contour=None, rect=None, center=None, title="Image",
+def draw_img(image, contour=None, rectangle=False, center=False, title="Image",
              contour_color=c.GREEN, contour_width=c.CONTOUR_LINE_WIDTH,
              rect_color=c.GREEN, rect_width=c.RECT_LINE_WIDTH,
              center_color=c.GREEN, center_size=None, center_width=c.CENTER_LINE_WIDTH
@@ -34,27 +33,29 @@ def draw_img(image, contour=None, rect=None, center=None, title="Image",
 
     if contour is not None:
         cv2.drawContours(canvas, contour, -1, contour_color, contour_width)
+    else:
+        rectangle = False
+        center = False
 
-    if rect is not None:
+
+    if rectangle:
+        rect = cv2.minAreaRect(contour)
         box = cv2.boxPoints(rect)
         box = np.intp(box)
         cv2.drawContours(canvas, [box], 0, rect_color, rect_width)
 
-    if center is not None:
+    if center:
+        (cx, cy), (w, h), angle = rect
+        cx, cy = int(cx), int(cy)
         if center_size is None:
             if rect is not None:
-                (_, _), (w, h), _ = rect
                 center_size = int(min(w, h) / 20)
             else:
                 center_size = 100
-
-        cx, cy = int(center[0]), int(center[1])
         cv2.line(canvas, (cx - center_size, cy), (cx + center_size, cy),
                  center_color, center_width)
         cv2.line(canvas, (cx, cy - center_size), (cx, cy + center_size),
                  center_color, center_width)
-
-    cv2.namedWindow(title, cv2.WINDOW_NORMAL)
     cv2.imshow(title, canvas)
 
 def get_angle(img1, img2):
