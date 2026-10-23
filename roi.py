@@ -9,107 +9,96 @@ import cv2
 import constants as c
 import img_process as ip
 
-# State of ROI
+# ROI geometry
+@dataclass
+class RoiGeometry:
+    offset: tuple
+    w: float
+    h: float
+
+    # calculates ROI geometry (if it is rotated or/and moved)
+    def corners(self, cur_center, angle_deg):
+        a = np.radians(angle_deg)
+        ca, sa = np.cos(a), np.sin(a)
+        R = np.array([[ca, -sa], [sa, ca]], dtype=np.float32)
+
+        ox, oy = self.offset
+        roi_center = (np.asarray(cur_center, np.float32)
+                      + R @ np.array([ox, oy], np.float32))
+
+        half = np.array([[-self.w/2, -self.h/2],
+                         [ self.w/2, -self.h/2],
+                         [ self.w/2,  self.h/2],
+                         [-self.w/2,  self.h/2]], dtype=np.float32)
+        return np.intp(half @ R.T + roi_center), roi_center, R
+
+# Reference
+@dataclass
+class Reference:
+    image: np.ndarray
+    center: tuple
+
+# Collect together ROI geometry and ref
 @dataclass
 class RefState:
-    have_ref: bool = False
-    ref_center: tuple | None = None
-    roi_offset: tuple | None = None
-    roi_w: int = 0
-    roi_h: int = 0
-    ref_frame: np.ndarray | None = None
+    geometry: RoiGeometry | None = None
+    reference: Reference | None = None
     prev_angle: float | None = None
+
+    @property
+    def ready(self) -> bool:
+        return self.geometry is not None and self.reference is not None
+
+    def update_angle(self, raw_angle: float) -> float:
+        if self.prev_angle is not None:
+            while raw_angle - self.prev_angle > 180: raw_angle -= 360
+            while raw_angle - self.prev_angle < -180: raw_angle += 360
+        self.prev_angle = raw_angle
+        return raw_angle
 
 # init ref ROI (select on the image)
 def init_reference(frame) -> RefState:
-    roi_x0, roi_y0, roi_w, roi_h = cv2.selectROI(
-        "Select ROI", frame, showCrosshair=True, fromCenter=False)
+    x0, y0, w, h = cv2.selectROI("Select ROI", frame, True, False)
     cv2.destroyWindow("Select ROI")
-
-    if roi_w <= 0 or roi_h <= 0:
+    if w <= 0 or h <= 0:
         return RefState()
 
-    roi_cx = roi_x0 + roi_w / 2
-    roi_cy = roi_y0 + roi_h / 2
+    contours = ip.external_countur_get(ip.rgb2bin(frame, low_threshold=160))
+    if not contours:
+        return RefState()
 
-    ref_bin = ip.rgb2bin(frame, low_threshold=160)
-    ref_contours = ip.external_countur_get(ref_bin)
-    if len(ref_contours) > 0:
-            ref_contours = ref_contours[0]
-    else: return RefState()
-
-    ref_rect = cv2.minAreaRect(ref_contours)
-    ref_center = ref_rect[0]
+    ref_center = cv2.minAreaRect(contours[0])[0]
+    roi_cx, roi_cy = x0 + w / 2, y0 + h / 2
 
     return RefState(
-        have_ref=True,
-        ref_center=ref_center,
-        roi_offset=(roi_cx - ref_center[0], roi_cy - ref_center[1]),
-        roi_w=roi_w,
-        roi_h=roi_h,
-        ref_frame=frame.copy(),
-        prev_angle=None,
+        geometry=RoiGeometry(
+            offset=(roi_cx - ref_center[0], roi_cy - ref_center[1]),
+            w=float(w), h=float(h)),
+        reference=Reference(frame.copy(), ref_center),
     )
 
-# calculates ROI geometry (if it is rotated or/and moved)
-def roi_geometry(roi_offset, roi_w, roi_h, cur_center, angle_deg):
-    """
-      - angle_deg > 0 — rotation against clock arrow in frame coordinates
-      - Rotation matrix R = [[cos, -sin], [sin, cos]]
-      - roi_offset is setted in object coordinate system
-
-    retival:
-      corners    — (4, 2) np.intp, ROI in frame coord
-      roi_center — (2,) np.float32, center ROI 
-      R          — (2, 2) np.float32, ritation matrix
-    """
-    a = np.radians(angle_deg)
-    ca, sa = np.cos(a), np.sin(a)
-    R = np.array([[ca, -sa],
-                  [sa,  ca]], dtype=np.float32)
-
-    ox, oy = roi_offset
-    roi_center = (np.asarray(cur_center, dtype=np.float32)
-                  + R @ np.array([ox, oy], dtype=np.float32))
-
-    half = np.array([[-roi_w / 2.0, -roi_h / 2.0],
-                     [ roi_w / 2.0, -roi_h / 2.0],
-                     [ roi_w / 2.0,  roi_h / 2.0],
-                     [-roi_w / 2.0,  roi_h / 2.0]], dtype=np.float32)
-
-    corners = half @ R.T + roi_center          # (4, 2)
-    return np.intp(corners), roi_center, R
-
 def update_roi_tracking(frame, state: RefState, cur_center):
-    if not state.have_ref or cur_center is None:
+    if not state.ready or cur_center is None:
         return state
 
-    d_angle = ip.get_angle(state.ref_frame, frame, state.prev_angle)
-    state.prev_angle = d_angle
-
-    pts, _, _ = roi_geometry(
-        state.roi_offset, state.roi_w, state.roi_h, cur_center, d_angle)
+    d_angle = state.update_angle(ip.get_angle(state.reference.image, frame))
+    pts, _, _ = state.geometry.corners(cur_center, d_angle)
     cv2.polylines(frame, [pts], True, c.BLUE, 2)
-
     return state
 
 # cuts aligned ROI from frame
-def extract_aligned_roi(frame, state, cur_center, d_angle):
-    import roi
-    if state.roi_w <= 0 or state.roi_h <= 0 or state.roi_offset is None:
+def extract_aligned_roi(frame, state: RefState, cur_center, d_angle):
+    if not state.ready:
         return None
 
-    _, roi_center, R = roi.roi_geometry(
-        state.roi_offset, state.roi_w, state.roi_h, cur_center, d_angle)
+    _, roi_center, R = state.geometry.corners(cur_center, d_angle)
+    w, h = int(state.geometry.w), int(state.geometry.h)
 
-    # p_roi = R^T @ (p_frame - roi_center) + [w/2, h/2]
     Rt = R.T
-    M = np.zeros((2, 3), dtype=np.float32)
+    M = np.zeros((2, 3), np.float32)
     M[:, :2] = Rt
-    M[:, 2]  = np.array([state.roi_w / 2.0, state.roi_h / 2.0],
-                        dtype=np.float32) - Rt @ roi_center
+    M[:, 2] = np.array([w / 2, h / 2], np.float32) - Rt @ roi_center
 
-    roi = cv2.warpAffine(frame, M, (int(state.roi_w), int(state.roi_h)),
-                         flags=cv2.INTER_CUBIC,
+    roi = cv2.warpAffine(frame, M, (w, h), flags=cv2.INTER_CUBIC,
                          borderMode=cv2.BORDER_REPLICATE)
     return roi if roi.size > 0 else None

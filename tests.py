@@ -177,9 +177,9 @@ def test4():
             state = roi.init_reference(frame)
             last_text = None
         elif key == ord('o'):
-            if state.have_ref and cur_center is not None:
+            if state.ready and cur_center is not None:
                 import ocr
-                d_angle = state.prev_angle if state.prev_angle is not None else 0.0
+                d_angle = state.prev_angle or 0.0
                 roi_img = roi.extract_aligned_roi(frame, state, cur_center, d_angle)
                 '''
                 # debug
@@ -196,7 +196,7 @@ def test4():
 
 
 def main():
-    test4()
+    test2()
 
 if __name__ == "__main__":
     main()
