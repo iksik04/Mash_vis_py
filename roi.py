@@ -80,10 +80,9 @@ def roi_geometry(roi_offset, roi_w, roi_h, cur_center, angle_deg):
     corners = half @ R.T + roi_center          # (4, 2)
     return np.intp(corners), roi_center, R
 
-def update_roi_tracking(frame, state: RefState, cur_center,
-                        do_ocr=False, allowlist=None):
+def update_roi_tracking(frame, state: RefState, cur_center):
     if not state.have_ref or cur_center is None:
-        return state, None
+        return state
 
     d_angle = ip.get_angle(state.ref_frame, frame, state.prev_angle)
     state.prev_angle = d_angle
@@ -92,10 +91,4 @@ def update_roi_tracking(frame, state: RefState, cur_center,
         state.roi_offset, state.roi_w, state.roi_h, cur_center, d_angle)
     cv2.polylines(frame, [pts], True, c.BLUE, 2)
 
-    text = None
-    if do_ocr:
-        import ocr
-        roi_img = ocr.extract_aligned_roi(frame, state, cur_center, d_angle)
-        text = ocr.recognize(roi_img, allowlist=allowlist)
-
-    return state, text
+    return state

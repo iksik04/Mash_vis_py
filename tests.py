@@ -4,7 +4,6 @@ import numpy as np
 import img_process as ip
 
 import constants as c
-import funcs as f
 import roi as roi
 
 
@@ -162,13 +161,13 @@ def test4():
             rect = cv2.minAreaRect(contour)
             cur_center = rect[0]
 
-        state, _ = roi.update_roi_tracking(frame, state, cur_center)
+        state = roi.update_roi_tracking(frame, state, cur_center)
 
         ip.draw_img(frame, title="Test", contour=contour, center=True)
 
         if last_text:
             cv2.putText(frame, f"OCR: {last_text}", (10, 30),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, c.GREEN, 2)
             cv2.imshow("Test", frame)
 
         key = cv2.waitKey(1) & 0xFF
@@ -182,8 +181,11 @@ def test4():
                 import ocr
                 d_angle = state.prev_angle if state.prev_angle is not None else 0.0
                 roi_img = ocr.extract_aligned_roi(frame, state, cur_center, d_angle)
+                '''
+                # debug
                 if roi_img is not None:
-                    cv2.imshow("ROI to OCR", roi_img)  # что реально видит OCR
+                    cv2.imshow("ROI to OCR", roi_img)
+                '''
                 last_text = ocr.recognize(roi_img, allowlist=c.test_allowlist)
                 print("--OCR:", last_text)
             else:
