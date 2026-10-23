@@ -83,7 +83,7 @@ def get_angle(img1, img2):
     angle = np.degrees(np.arctan2(M[1, 0], M[0, 0]))
     return angle
 
-# gets the longest contour from binary image
+# gets the external contours from binary image
 def external_countur_get(bin_img):
     contours, _ = cv2.findContours(bin_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     filtered_contours = []
@@ -93,5 +93,9 @@ def external_countur_get(bin_img):
             filtered_contours.append(cnt)
     return filtered_contours
 
+# helper to get the longest countur from list
+def longest_contour(contour):
+    if len(contour) > 0: contour = contour[0]
+    return contour
 # if __name__ == "__main__":
 #    main()

@@ -118,7 +118,7 @@ def test3():
             rect = cv2.minAreaRect(contour)
             cur_center = rect[0]
 
-        state = roi.update_roi_tracking(frame, state, cur_center)
+        state = roi.draw_roi(frame, state, cur_center)
 
         img = ip.render_img(frame, contour=contour, center=True)
         cv2.imshow("Test", img)
@@ -161,7 +161,7 @@ def test4():
             rect = cv2.minAreaRect(contour)
             cur_center = rect[0]
 
-        state = roi.update_roi_tracking(frame, state, cur_center)
+        state = roi.draw_roi(frame, state, cur_center)
 
         img = ip.render_img(frame, contour=contour, center=True)
         cv2.imshow("Test", img)

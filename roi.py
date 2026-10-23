@@ -77,7 +77,7 @@ def init_reference(frame) -> RefState:
         reference=Reference(frame.copy(), ref_center),
     )
 
-def update_roi_tracking(frame, state: RefState, cur_center):
+def draw_roi(frame, state: RefState, cur_center):
     if not state.ready or cur_center is None:
         return state
 
