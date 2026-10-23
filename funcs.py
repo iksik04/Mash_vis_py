@@ -61,7 +61,8 @@ def draw_img(image, contour=None, rectangle=False, center=False, title="Image",
                  center_color, center_width)
     cv2.imshow(title, canvas)
 
-def get_angle(img1, img2):
+# gets angle between two images
+def get_angle(img1, img2, prev_angle=None):
     orb = cv2.ORB_create()
     kp1, des1 = orb.detectAndCompute(img1, None)
     kp2, des2 = orb.detectAndCompute(img2, None)
@@ -77,8 +78,15 @@ def get_angle(img1, img2):
     M, _ = cv2.estimateAffinePartial2D(src_pts, dst_pts)
     if M is None:
         print("--ERR: AffinePartial2D")
-    else:
-        angle = np.degrees(np.arctan2(M[1, 0], M[0, 0]))
+        return prev_angle if prev_angle is not None else 0.0
+    
+    angle = np.degrees(np.arctan2(M[1, 0], M[0, 0]))
+
+    if prev_angle is not None:
+        while angle - prev_angle > 180.0:
+            angle -= 360.0
+        while angle - prev_angle < -180.0:
+            angle += 360.0
     return angle
 
 # calculates new ROI corners coordinates with offset and rotation 

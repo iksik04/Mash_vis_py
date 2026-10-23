@@ -3,6 +3,7 @@ import numpy as np
 
 import constants as c
 import funcs as f
+import roi_tracker as roi
 
 def test1():
     ref_img = cv2.imread(c.ref_image_path)
@@ -99,14 +100,7 @@ def test3():
         print("Cam not found")
         exit()
 
-    have_ref = False
-
-    ref_center = None       
-    roi_offset = None         
-    roi_w = roi_h = 0     
-
-    ref_frame = None     
-    prev_angle = None          
+    state = roi.RefState()   
 
     while True:
         ret, frame = cap.read()
@@ -123,18 +117,7 @@ def test3():
             rect = cv2.minAreaRect(contour)
             cur_center = rect[0]
 
-        if have_ref and cur_center is not None:
-            d_angle = f.get_angle(ref_frame, frame)
-
-            if prev_angle is not None:
-                while d_angle - prev_angle > 180.0:
-                    d_angle -= 360.0
-                while d_angle - prev_angle < -180.0:
-                    d_angle += 360.0
-            prev_angle = d_angle
-
-            pts = f.get_roi_corners(roi_offset, roi_w, roi_h, cur_center, d_angle)
-            cv2.polylines(frame, [pts], True, c.BLUE, 2)
+        state = roi.update_roi_tracking(frame, state, cur_center)
 
         f.draw_img(frame, title="Test", contour=contour, center=True)
 
@@ -142,27 +125,48 @@ def test3():
         if key == ord('q'):
             break
         elif key == ord('r'):
-            roi_x0, roi_y0, roi_w, roi_h = cv2.selectROI(
-                "Select ROI", frame, showCrosshair=True, fromCenter=False)
-            cv2.destroyWindow("Select ROI")
-
-            roi_cx = roi_x0 + roi_w / 2
-            roi_cy = roi_y0 + roi_h / 2
-
-            ref_bin_frame = f.rgb2bin(frame, low_threshold=160)
-            ref_contours = f.external_countur_get(ref_bin_frame)
-            if len(ref_contours) > 0 and roi_w > 0 and roi_h > 0:
-                ref_rect = cv2.minAreaRect(ref_contours[0])
-                ref_center = ref_rect[0]
-                roi_offset = (roi_cx - ref_center[0], roi_cy - ref_center[1])
-                ref_frame = frame.copy()
-                prev_angle = None
-                have_ref = True
-            else:
-                have_ref = False
+            state = roi.init_reference(frame, f)
 
     cap.release()
     cv2.destroyAllWindows()
+
+def test4():
+    cv2.namedWindow("Test", cv2.WINDOW_NORMAL)
+
+    cap = cv2.VideoCapture(0)
+    if not cap.isOpened():
+        print("Cam not found")
+        exit()
+
+    state = roi.RefState() 
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            print("Can not get picture")
+            break
+    
+        cur_center = None
+    
+        bin_frame = f.rgb2bin(frame, low_threshold=160)
+        contour = f.external_countur_get(bin_frame)
+        if len(contour) > 0:
+            contour = contour[0]
+            rect = cv2.minAreaRect(contour)
+            cur_center = rect[0]
+    
+        state = roi.update_roi_tracking(frame, state, cur_center)
+    
+        f.draw_img(frame, title="Test", contour=contour, center=True)
+    
+        key = cv2.waitKey(1) & 0xFF
+        if key == ord('q'):
+            break
+        elif key == ord('r'):
+            state = roi.init_reference(frame, f)
+    
+        cap.release()
+        cv2.destroyAllWindows()
 
 
 def main():
