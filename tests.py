@@ -172,7 +172,7 @@ def test4():
         cv2.imshow("Test", img)
 
         if last_text:
-            cv2.putText(frame, f"rOCR: {last_text}", (10, 30),
+            cv2.putText(frame, f"OCR: {last_text}", (10, 30),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.8, c.GREEN, 2)
             cv2.imshow("Test", frame)
 
@@ -180,8 +180,11 @@ def test4():
         if key == ord('q'):
             break
         elif key == ord('r'):
+            cv2.destroyWindow("Test")
             state = roi.init_reference(frame)
             last_text = None
+            cv2.namedWindow("Test", cv2.WINDOW_NORMAL)
+            cv2.waitKey(1)
         elif key == ord('o'):
             if state.ready and cur_center is not None:
                 import ocr
