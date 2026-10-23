@@ -14,8 +14,10 @@ def test1():
     ref_bin_img = ip.rgb2bin(ref_img)
     test_bin_img = ip.rgb2bin(test_img)
     
-    ref_ext_countour = ip.external_countur_get(ref_bin_img)[0] # only first one
-    test_ext_countour = ip.external_countur_get(test_bin_img)[0] # only first one
+    ref_ext_countour = ip.external_countur_get(ref_bin_img) # only first one
+    ref_ext_countour = ip.longest_contour(ref_ext_countour)
+    test_ext_countour = ip.external_countur_get(test_bin_img) # only first one
+    test_ext_countour = ip.longest_contour(test_ext_countour)
     
     match_value = cv2.matchShapes(ref_ext_countour, test_ext_countour, cv2.CONTOURS_MATCH_I1, 0.0)
     
@@ -78,6 +80,7 @@ def test2():
         _, binary_img = cv2.threshold(gray_img, low_threshold, 255, cv2.THRESH_BINARY)
 
         contour = ip.external_countur_get(binary_img)
+        contour = ip.longest_contour(contour)
         if len(contour) > 0:
             contour = contour[0]
         else: contour = None
@@ -113,6 +116,7 @@ def test3():
 
         bin_frame = ip.rgb2bin(frame, low_threshold=160)
         contour = ip.external_countur_get(bin_frame)
+        contour = ip.longest_contour(contour)
         if len(contour) > 0:
             contour = contour[0]
             rect = cv2.minAreaRect(contour)
@@ -156,6 +160,7 @@ def test4():
 
         bin_frame = ip.rgb2bin(frame, low_threshold=160)
         contour = ip.external_countur_get(bin_frame)
+        contour = ip.longest_contour(contour)
         if len(contour) > 0:
             contour = contour[0]
             rect = cv2.minAreaRect(contour)

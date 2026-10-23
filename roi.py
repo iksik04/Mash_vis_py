@@ -64,6 +64,7 @@ def init_reference(frame) -> RefState:
         return RefState()
 
     contours = ip.external_countur_get(ip.rgb2bin(frame, low_threshold=160))
+    contours = ip.longest_contour(contours)
     if not contours:
         return RefState()
 
