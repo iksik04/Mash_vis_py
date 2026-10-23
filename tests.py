@@ -1,19 +1,22 @@
 import cv2
 import numpy as np
 
+import img_process as ip
+
 import constants as c
 import funcs as f
 import roi_tracker as roi
+
 
 def test1():
     ref_img = cv2.imread(c.ref_image_path)
     test_img = cv2.imread(c.test_image_path)
     
-    ref_bin_img = f.rgb2bin(ref_img)
-    test_bin_img = f.rgb2bin(test_img)
+    ref_bin_img = ip.rgb2bin(ref_img)
+    test_bin_img = ip.rgb2bin(test_img)
     
-    ref_ext_countour = f.external_countur_get(ref_bin_img)[0] # only first one
-    test_ext_countour = f.external_countur_get(test_bin_img)[0] # only first one
+    ref_ext_countour = ip.external_countur_get(ref_bin_img)[0] # only first one
+    test_ext_countour = ip.external_countur_get(test_bin_img)[0] # only first one
     
     match_value = cv2.matchShapes(ref_ext_countour, test_ext_countour, cv2.CONTOURS_MATCH_I1, 0.0)
     
@@ -28,16 +31,16 @@ def test1():
     (rcx, rcy), (rw, rh), rangle = ref_rect
     (tcx, tcy), (tw, th), tangle = test_rect
     
-    delta_angle = f.get_angle(ref_img, test_img)
+    delta_angle = ip.get_angle(ref_img, test_img)
     print(delta_angle)
 
     cv2.namedWindow("Ref image", cv2.WINDOW_NORMAL)
     cv2.namedWindow("Test image", cv2.WINDOW_NORMAL)
     
-    f.draw_img(ref_bin_img, contour=ref_ext_countour, rectangle=True, center=True,
+    ip.draw_img(ref_bin_img, contour=ref_ext_countour, rectangle=True, center=True,
             title="Ref image")
     
-    f.draw_img(test_img, contour=test_ext_countour, rectangle=True, center=True, 
+    ip.draw_img(test_img, contour=test_ext_countour, rectangle=True, center=True, 
             title="Test image")
     
     print("Нажмите любую клавишу в окне изображения, чтобы закрыть его...")
@@ -76,12 +79,12 @@ def test2():
 
         _, binary_img = cv2.threshold(gray_img, low_threshold, 255, cv2.THRESH_BINARY)
 
-        contour = f.external_countur_get(binary_img)
+        contour = ip.external_countur_get(binary_img)
         if len(contour) > 0:
             contour = contour[0]
         else: contour = None
 
-        f.draw_img(binary_img, contour=contour, contour_width=4, 
+        ip.draw_img(binary_img, contour=contour, contour_width=4, 
                    rectangle=True, rect_width=4, 
                    center=True, center_width=4,
                    title="Test")
@@ -110,8 +113,8 @@ def test3():
 
         cur_center = None
 
-        bin_frame = f.rgb2bin(frame, low_threshold=160)
-        contour = f.external_countur_get(bin_frame)
+        bin_frame = ip.rgb2bin(frame, low_threshold=160)
+        contour = ip.external_countur_get(bin_frame)
         if len(contour) > 0:
             contour = contour[0]
             rect = cv2.minAreaRect(contour)
@@ -119,7 +122,7 @@ def test3():
 
         state, _ = roi.update_roi_tracking(frame, state, cur_center)
 
-        f.draw_img(frame, title="Test", contour=contour, center=True)
+        ip.draw_img(frame, title="Test", contour=contour, center=True)
 
         key = cv2.waitKey(1) & 0xFF
         if key == ord('q'):
@@ -131,6 +134,9 @@ def test3():
     cv2.destroyAllWindows()
 
 def test4():
+    import ocr
+    ocr.get_reader()
+
     cv2.namedWindow("Test", cv2.WINDOW_NORMAL)
 
     cap = cv2.VideoCapture(0)
@@ -149,8 +155,8 @@ def test4():
         cur_center = None
         contour = None
 
-        bin_frame = f.rgb2bin(frame, low_threshold=160)
-        contour = f.external_countur_get(bin_frame)
+        bin_frame = ip.rgb2bin(frame, low_threshold=160)
+        contour = ip.external_countur_get(bin_frame)
         if len(contour) > 0:
             contour = contour[0]
             rect = cv2.minAreaRect(contour)
@@ -158,7 +164,7 @@ def test4():
 
         state, _ = roi.update_roi_tracking(frame, state, cur_center)
 
-        f.draw_img(frame, title="Test", contour=contour, center=True)
+        ip.draw_img(frame, title="Test", contour=contour, center=True)
 
         if last_text:
             cv2.putText(frame, f"OCR: {last_text}", (10, 30),
@@ -179,9 +185,9 @@ def test4():
                 if roi_img is not None:
                     cv2.imshow("ROI to OCR", roi_img)  # что реально видит OCR
                 last_text = ocr.recognize(roi_img, allowlist=c.test_allowlist)
-                print("OCR:", last_text)
+                print("--OCR:", last_text)
             else:
-                print("OCR: нет референса или объекта — нажмите 'r'")
+                print("--OCR: no ref or obj, press 'r'")
 
     cap.release()
     cv2.destroyAllWindows()

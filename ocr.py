@@ -2,6 +2,8 @@ import cv2
 import numpy as np
 import easyocr
 
+import funcs as f
+
 _reader = None
 
 def get_reader(langs=('ru', 'en'), gpu=False):
@@ -12,52 +14,26 @@ def get_reader(langs=('ru', 'en'), gpu=False):
 
 
 def extract_aligned_roi(frame, state, cur_center, d_angle):
+    """
+    Вырезает из кадра выровненный ROI размером state.roi_w x state.roi_h.
+    Одно преобразование: точка кадра -> точка в системе ROI.
+    """
     if state.roi_w <= 0 or state.roi_h <= 0 or state.roi_offset is None:
         return None
 
-    # нормализуем накопленный угол в (-180, 180]
-    a = ((d_angle + 180.0) % 360.0) - 180.0
+    _, roi_center, R = f.roi_geometry(
+        state.roi_offset, state.roi_w, state.roi_h, cur_center, d_angle)
 
-    h_img, w_img = frame.shape[:2]
-    cx_obj, cy_obj = cur_center
+    # p_roi = R^T @ (p_frame - roi_center) + [w/2, h/2]
+    Rt = R.T
+    M = np.zeros((2, 3), dtype=np.float32)
+    M[:, :2] = Rt
+    M[:, 2]  = np.array([state.roi_w / 2.0, state.roi_h / 2.0],
+                        dtype=np.float32) - Rt @ roi_center
 
-    rad = np.radians(a)
-    cos_a, sin_a = np.cos(rad), np.sin(rad)
-    ox, oy = state.roi_offset
-    roi_cx = cx_obj + ox * cos_a - oy * sin_a
-    roi_cy = cy_obj + ox * sin_a + oy * cos_a
-
-    diag = int(np.hypot(state.roi_w, state.roi_h) / 2) + 8
-    x0 = max(int(roi_cx) - diag, 0)
-    y0 = max(int(roi_cy) - diag, 0)
-    x1 = min(int(roi_cx) + diag, w_img)
-    y1 = min(int(roi_cy) + diag, h_img)
-    patch = frame[y0:y1, x0:x1]
-    if patch.size == 0:
-        return None
-
-    local_cx, local_cy = roi_cx - x0, roi_cy - y0
-    # ВАЖНО: +a (знак поменяли с -d_angle на +a)
-    M = cv2.getRotationMatrix2D((local_cx, local_cy), a, 1.0)
-    h, w = patch.shape[:2]
-    rotated = cv2.warpAffine(patch, M, (w, h),
-                             flags=cv2.INTER_CUBIC,
-                             borderMode=cv2.BORDER_REPLICATE)
-
-    rcx, rcy = int(local_cx), int(local_cy)
-    hw, hh = state.roi_w // 2, state.roi_h // 2
-    x_start, y_start = rcx - hw, rcy - hh
-    x_end, y_end = x_start + state.roi_w, y_start + state.roi_h
-
-    pad_l = max(-x_start, 0); pad_t = max(-y_start, 0)
-    pad_r = max(x_end - w, 0); pad_b = max(y_end - h, 0)
-    if pad_l or pad_t or pad_r or pad_b:
-        rotated = cv2.copyMakeBorder(rotated, pad_t, pad_b, pad_l, pad_r,
-                                     cv2.BORDER_REPLICATE)
-        x_start += pad_l; y_start += pad_t
-        x_end += pad_l; y_end += pad_t
-
-    roi = rotated[y_start:y_end, x_start:x_end]
+    roi = cv2.warpAffine(frame, M, (int(state.roi_w), int(state.roi_h)),
+                         flags=cv2.INTER_CUBIC,
+                         borderMode=cv2.BORDER_REPLICATE)
     return roi if roi.size > 0 else None
 
 
