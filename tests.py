@@ -119,7 +119,7 @@ def test3():
             rect = cv2.minAreaRect(contour)
             cur_center = rect[0]
 
-        state, _ = roi.update_roi_tracking(frame, state, cur_center)
+        state = roi.update_roi_tracking(frame, state, cur_center)
 
         ip.draw_img(frame, title="Test", contour=contour, center=True)
 
@@ -127,7 +127,7 @@ def test3():
         if key == ord('q'):
             break
         elif key == ord('r'):
-            state = roi.init_reference(frame, f)
+            state = roi.init_reference(frame)
 
     cap.release()
     cv2.destroyAllWindows()
@@ -180,7 +180,7 @@ def test4():
             if state.have_ref and cur_center is not None:
                 import ocr
                 d_angle = state.prev_angle if state.prev_angle is not None else 0.0
-                roi_img = ocr.extract_aligned_roi(frame, state, cur_center, d_angle)
+                roi_img = roi.extract_aligned_roi(frame, state, cur_center, d_angle)
                 '''
                 # debug
                 if roi_img is not None:

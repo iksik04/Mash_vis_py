@@ -21,7 +21,8 @@ def draw_img(image, contour=None, rectangle=False, center=False, title="Image",
              center_color=c.GREEN, center_size=None, center_width=c.CENTER_LINE_WIDTH
             ):
 
-    if len(contour) == 0: contour = None
+    if len(contour) == 0 or contour is None:
+        contour = None
 
     if len(image.shape) == 2:
         canvas = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)

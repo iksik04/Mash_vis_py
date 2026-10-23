@@ -92,3 +92,24 @@ def update_roi_tracking(frame, state: RefState, cur_center):
     cv2.polylines(frame, [pts], True, c.BLUE, 2)
 
     return state
+
+# cuts aligned ROI from frame
+def extract_aligned_roi(frame, state, cur_center, d_angle):
+    import roi
+    if state.roi_w <= 0 or state.roi_h <= 0 or state.roi_offset is None:
+        return None
+
+    _, roi_center, R = roi.roi_geometry(
+        state.roi_offset, state.roi_w, state.roi_h, cur_center, d_angle)
+
+    # p_roi = R^T @ (p_frame - roi_center) + [w/2, h/2]
+    Rt = R.T
+    M = np.zeros((2, 3), dtype=np.float32)
+    M[:, :2] = Rt
+    M[:, 2]  = np.array([state.roi_w / 2.0, state.roi_h / 2.0],
+                        dtype=np.float32) - Rt @ roi_center
+
+    roi = cv2.warpAffine(frame, M, (int(state.roi_w), int(state.roi_h)),
+                         flags=cv2.INTER_CUBIC,
+                         borderMode=cv2.BORDER_REPLICATE)
+    return roi if roi.size > 0 else None
