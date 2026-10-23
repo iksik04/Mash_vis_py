@@ -5,7 +5,7 @@ import img_process as ip
 
 import constants as c
 import funcs as f
-import roi_tracker as roi
+import roi as roi
 
 
 def test1():
@@ -175,7 +175,7 @@ def test4():
         if key == ord('q'):
             break
         elif key == ord('r'):
-            state = roi.init_reference(frame, f)
+            state = roi.init_reference(frame)
             last_text = None
         elif key == ord('o'):
             if state.have_ref and cur_center is not None:
