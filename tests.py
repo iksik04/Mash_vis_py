@@ -117,7 +117,7 @@ def test3():
             rect = cv2.minAreaRect(contour)
             cur_center = rect[0]
 
-        state = roi.update_roi_tracking(frame, state, cur_center)
+        state, _ = roi.update_roi_tracking(frame, state, cur_center)
 
         f.draw_img(frame, title="Test", contour=contour, center=True)
 
@@ -136,41 +136,59 @@ def test4():
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         print("Cam not found")
-        exit()
+        return
 
-    state = roi.RefState() 
+    state = roi.RefState()
+    last_text = None
 
     while True:
         ret, frame = cap.read()
         if not ret:
-            print("Can not get picture")
             break
-    
+
         cur_center = None
-    
+        contour = None
+
         bin_frame = f.rgb2bin(frame, low_threshold=160)
         contour = f.external_countur_get(bin_frame)
         if len(contour) > 0:
             contour = contour[0]
             rect = cv2.minAreaRect(contour)
             cur_center = rect[0]
-    
-        state = roi.update_roi_tracking(frame, state, cur_center)
-    
+
+        state, _ = roi.update_roi_tracking(frame, state, cur_center)
+
         f.draw_img(frame, title="Test", contour=contour, center=True)
-    
+
+        if last_text:
+            cv2.putText(frame, f"OCR: {last_text}", (10, 30),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+            cv2.imshow("Test", frame)
+
         key = cv2.waitKey(1) & 0xFF
         if key == ord('q'):
             break
         elif key == ord('r'):
             state = roi.init_reference(frame, f)
-    
-        cap.release()
-        cv2.destroyAllWindows()
+            last_text = None
+        elif key == ord('o'):
+            if state.have_ref and cur_center is not None:
+                import ocr
+                d_angle = state.prev_angle if state.prev_angle is not None else 0.0
+                roi_img = ocr.extract_aligned_roi(frame, state, cur_center, d_angle)
+                if roi_img is not None:
+                    cv2.imshow("ROI to OCR", roi_img)  # что реально видит OCR
+                last_text = ocr.recognize(roi_img, allowlist=c.test_allowlist)
+                print("OCR:", last_text)
+            else:
+                print("OCR: нет референса или объекта — нажмите 'r'")
+
+    cap.release()
+    cv2.destroyAllWindows()
 
 
 def main():
-    test3()
+    test4()
 
 if __name__ == "__main__":
     main()

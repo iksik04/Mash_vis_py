@@ -47,9 +47,10 @@ def init_reference(frame, f) -> RefState:
     )
 
 
-def update_roi_tracking(frame, state: RefState, cur_center) -> RefState:
+def update_roi_tracking(frame, state: RefState, cur_center,
+                        do_ocr=False, allowlist=None):
     if not state.have_ref or cur_center is None:
-        return state
+        return state, None
 
     d_angle = f.get_angle(state.ref_frame, frame, state.prev_angle)
     state.prev_angle = d_angle
@@ -57,4 +58,11 @@ def update_roi_tracking(frame, state: RefState, cur_center) -> RefState:
     pts = f.get_roi_corners(
         state.roi_offset, state.roi_w, state.roi_h, cur_center, d_angle)
     cv2.polylines(frame, [pts], True, c.BLUE, 2)
-    return state
+
+    text = None
+    if do_ocr:
+        import ocr  # локальный импорт: easyocr грузится только когда нужен
+        roi_img = ocr.extract_aligned_roi(frame, state, cur_center, d_angle)
+        text = ocr.recognize(roi_img, allowlist=allowlist)
+
+    return state, text

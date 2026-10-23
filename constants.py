@@ -19,6 +19,8 @@ BINARYSATION_HIGH_THRESHOLD = 255
 ref_image_path = "images/im1.jpg"
 test_image_path = "images/im2.jpg"
 
+# symbols allowlists 
+test_allowlist = 'EVOILGF'
 
 # if __name__ == "__main__":
 #    main()
