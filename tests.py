@@ -36,12 +36,11 @@ def test1():
     cv2.namedWindow("Ref image", cv2.WINDOW_NORMAL)
     cv2.namedWindow("Test image", cv2.WINDOW_NORMAL)
     
-    ip.draw_img(ref_bin_img, contour=ref_ext_countour, rectangle=True, center=True,
-            title="Ref image")
-    
-    ip.draw_img(test_img, contour=test_ext_countour, rectangle=True, center=True, 
-            title="Test image")
-    
+    img1 = ip.render_img(ref_bin_img, contour=ref_ext_countour, rectangle=True, center=True)
+    cv2.imshow("Ref image", img1)
+
+    img2 = ip.render_img(test_img, contour=test_ext_countour, rectangle=True, center=True)
+    cv2.imshow("Test image", img2)
     print("Нажмите любую клавишу в окне изображения, чтобы закрыть его...")
     cv2.waitKey(0)
     
@@ -83,10 +82,10 @@ def test2():
             contour = contour[0]
         else: contour = None
 
-        ip.draw_img(binary_img, contour=contour, contour_width=4, 
+        img = ip.render_img(binary_img, contour=contour, contour_width=4, 
                    rectangle=True, rect_width=4, 
-                   center=True, center_width=4,
-                   title="Test")
+                   center=True, center_width=4)
+        cv2.imshow("Test", img)
         
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
@@ -121,7 +120,8 @@ def test3():
 
         state = roi.update_roi_tracking(frame, state, cur_center)
 
-        ip.draw_img(frame, title="Test", contour=contour, center=True)
+        img = ip.render_img(frame, contour=contour, center=True)
+        cv2.imshow("Test", img)
 
         key = cv2.waitKey(1) & 0xFF
         if key == ord('q'):
@@ -163,7 +163,8 @@ def test4():
 
         state = roi.update_roi_tracking(frame, state, cur_center)
 
-        ip.draw_img(frame, title="Test", contour=contour, center=True)
+        img = ip.render_img(frame, contour=contour, center=True)
+        cv2.imshow("Test", img)
 
         if last_text:
             cv2.putText(frame, f"OCR: {last_text}", (10, 30),
@@ -196,7 +197,7 @@ def test4():
 
 
 def main():
-    test2()
+    test4()
 
 if __name__ == "__main__":
     main()

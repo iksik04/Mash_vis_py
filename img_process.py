@@ -14,8 +14,8 @@ def rgb2bin(img, low_threshold = c.BINARYSATION_LOW_THRESHOLD, high_threshold = 
 
     return binary_img
 
-# draws image. Countur, rectangle and center are optional
-def draw_img(image, contour=None, rectangle=False, center=False, title="Image",
+# renders image. Countur, rectangle and center are optional
+def render_img(image, contour=None, rectangle=False, center=False,
              contour_color=c.GREEN, contour_width=c.CONTOUR_LINE_WIDTH,
              rect_color=c.GREEN, rect_width=c.RECT_LINE_WIDTH,
              center_color=c.GREEN, center_size=None, center_width=c.CENTER_LINE_WIDTH
@@ -54,7 +54,7 @@ def draw_img(image, contour=None, rectangle=False, center=False, title="Image",
                  center_color, center_width)
         cv2.line(canvas, (cx, cy - center_size), (cx, cy + center_size),
                  center_color, center_width)
-    cv2.imshow(title, canvas)
+    return canvas
 
 # gets angle between two images
 def get_angle(img1, img2):
@@ -62,10 +62,15 @@ def get_angle(img1, img2):
     kp1, des1 = orb.detectAndCompute(img1, None)
     kp2, des2 = orb.detectAndCompute(img2, None)
 
+    if des1 is None or des2 is None:
+        return 0.0
+    
     bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
     matches = bf.match(des1, des2)
     matches = sorted(matches, key=lambda x: x.distance)
     matches = matches[:50]
+    if not matches:
+        return 0.0 
 
     src_pts = np.float32([kp1[m.queryIdx].pt for m in matches]).reshape(-1, 1, 2)
     dst_pts = np.float32([kp2[m.trainIdx].pt for m in matches]).reshape(-1, 1, 2)
