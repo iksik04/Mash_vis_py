@@ -81,9 +81,6 @@ def test2():
 
         contour = ip.external_countur_get(binary_img)
         contour = ip.longest_contour(contour)
-        if len(contour) > 0:
-            contour = contour[0]
-        else: contour = None
 
         img = ip.render_img(binary_img, contour=contour, contour_width=4, 
                    rectangle=True, rect_width=4, 
@@ -117,10 +114,8 @@ def test3():
         bin_frame = ip.rgb2bin(frame, low_threshold=160)
         contour = ip.external_countur_get(bin_frame)
         contour = ip.longest_contour(contour)
-        if len(contour) > 0:
-            contour = contour[0]
-            rect = cv2.minAreaRect(contour)
-            cur_center = rect[0]
+        rect = cv2.minAreaRect(contour)
+        cur_center = rect[0]
 
         state = roi.draw_roi(frame, state, cur_center)
 
@@ -149,6 +144,7 @@ def test4():
 
     state = roi.RefState()
     last_text = None
+    had_contours = True
 
     while True:
         ret, frame = cap.read()
@@ -161,8 +157,12 @@ def test4():
         bin_frame = ip.rgb2bin(frame, low_threshold=160)
         contour = ip.external_countur_get(bin_frame)
         contour = ip.longest_contour(contour)
-        if len(contour) > 0:
-            contour = contour[0]
+        if len(contour) == 0:
+            if had_contours:
+                print("--ERR: no contours found")
+                had_contours = False
+        else:
+            had_contours = True
             rect = cv2.minAreaRect(contour)
             cur_center = rect[0]
 
@@ -172,7 +172,7 @@ def test4():
         cv2.imshow("Test", img)
 
         if last_text:
-            cv2.putText(frame, f"OCR: {last_text}", (10, 30),
+            cv2.putText(frame, f"rOCR: {last_text}", (10, 30),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.8, c.GREEN, 2)
             cv2.imshow("Test", frame)
 

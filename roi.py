@@ -65,10 +65,10 @@ def init_reference(frame) -> RefState:
 
     contours = ip.external_countur_get(ip.rgb2bin(frame, low_threshold=160))
     contours = ip.longest_contour(contours)
-    if not contours:
+    if len(contours) == 0:
         return RefState()
 
-    ref_center = cv2.minAreaRect(contours[0])[0]
+    ref_center = cv2.minAreaRect(contours)[0]
     roi_cx, roi_cy = x0 + w / 2, y0 + h / 2
 
     return RefState(
