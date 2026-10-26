@@ -185,23 +185,6 @@ def test4():
     cap.release()
     cv2.destroyAllWindows()
 
-def test5():
-
-    cv2.namedWindow("Test", cv2.WINDOW_NORMAL)
-
-    trackers = roi.RoiSet()
-    frame = cv2.imread(c.ref_image_path)
-
-    while True:
-        key = cv2.waitKey(1) & 0xFF
-        if key == ord('q'):
-            break
-        elif key == ord('r'):
-            tr = roi.init_reference(frame, name=f"roi_{len(trackers)}")
-            if tr is not None:
-                trackers.add(tr)
-
-
 
 def main():
     test4()
