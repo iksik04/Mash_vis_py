@@ -9,6 +9,8 @@ import cv2
 import constants as c
 import img_process as ip
 
+from roi_selector import select_rotated_roi
+
 '''
 ROI geometry
 '''
@@ -17,6 +19,7 @@ class RoiGeometry:
     offset: tuple
     w: float
     h: float
+    angle: float = 0.0
 
     # calculates ROI geometry (if it is rotated or/and moved)
     def corners(self, cur_center, angle_deg):
@@ -27,12 +30,16 @@ class RoiGeometry:
         ox, oy = self.offset
         roi_center = (np.asarray(cur_center, np.float32)
                       + R @ np.array([ox, oy], np.float32))
+        
+        a_roi = np.radians(angle_deg + self.angle)
+        ca, sa = np.cos(a_roi), np.sin(a_roi)
+        R_roi = np.array([[ca, -sa], [sa, ca]], dtype=np.float32)
 
         half = np.array([[-self.w/2, -self.h/2],
                          [ self.w/2, -self.h/2],
                          [ self.w/2,  self.h/2],
                          [-self.w/2,  self.h/2]], dtype=np.float32)
-        return np.intp(half @ R.T + roi_center), roi_center, R
+        return np.intp(half @ R_roi.T + roi_center), roi_center, R_roi
 
 '''
 Reference image, center is a center of biggest contour
@@ -125,7 +132,7 @@ class RoiSet:
 '''
 init ref ROI (select on the image)
 '''
-def init_reference(frame, name: str = "roi") -> RoiTracker | None:
+'''def init_reference(frame, name: str = "roi") -> RoiTracker | None:
     x0, y0, w, h = cv2.selectROI("Select ROI", frame, True, False)
     cv2.destroyWindow("Select ROI")
     if w <= 0 or h <= 0:
@@ -145,6 +152,42 @@ def init_reference(frame, name: str = "roi") -> RoiTracker | None:
         geometry=RoiGeometry(
             offset=(roi_cx - ref_center[0], roi_cy - ref_center[1]),
             w=float(w), h=float(h)),
+        reference=Reference(frame.copy(), ref_center),
+    )'''
+def init_reference(frame, name: str = "roi") -> RoiTracker | None:
+    win = f"Select ROI [{name}]"
+    cv2.namedWindow(win, cv2.WINDOW_NORMAL)
+    cv2.imshow(win, frame)
+    cv2.waitKey(1)
+
+    sel = select_rotated_roi(win, frame)
+    cv2.destroyWindow(win)
+    if sel is None:
+        return None
+
+    x0, y0, w, h, angle_deg = sel
+    if w <= 0 or h <= 0:
+        return None
+
+    contour = ip.get_main_contour(
+        ip.rgb2bin(frame, low_threshold=c.BINARYSATION_LOW_THRESHOLD)
+    )
+    if contour is None:
+        return None
+    ref_center = cv2.minAreaRect(contour)[0]
+
+    a = np.radians(angle_deg)
+    R = np.array([[np.cos(a), -np.sin(a)],
+                  [np.sin(a),  np.cos(a)]], dtype=np.float32)
+    local_tl = np.array([-w / 2, -h / 2], dtype=np.float32)
+    roi_center = np.array([x0, y0], np.float32) - R @ local_tl
+
+    offset = (float(roi_center[0] - ref_center[0]),
+              float(roi_center[1] - ref_center[1]))
+
+    return RoiTracker(
+        name=name,
+        geometry=RoiGeometry(offset=offset, w=float(w), h=float(h), angle=float(angle_deg)),
         reference=Reference(frame.copy(), ref_center),
     )
 
