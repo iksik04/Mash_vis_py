@@ -7,14 +7,18 @@ import numpy as np
 import constants as c
 
 
-# turns rgb image into binary
+'''
+turns rgb image into binary
+'''
 def rgb2bin(img, low_threshold = c.BINARYSATION_LOW_THRESHOLD, high_threshold = c.BINARYSATION_HIGH_THRESHOLD):
     gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     _, binary_img = cv2.threshold(gray_img, low_threshold, high_threshold, cv2.THRESH_BINARY)
 
     return binary_img
 
-# renders image. Countur, rectangle and center are optional
+'''
+renders image. Countur, rectangle and center are optional
+'''
 def render_img(image, contour=None, rectangle=False, center=False,
              contour_color=c.GREEN, contour_width=c.CONTOUR_LINE_WIDTH,
              rect_color=c.GREEN, rect_width=c.RECT_LINE_WIDTH,
@@ -56,7 +60,9 @@ def render_img(image, contour=None, rectangle=False, center=False,
                  center_color, center_width)
     return canvas
 
-# gets angle between two images
+'''
+gets angle between two images
+'''
 def get_angle(img1, img2):
     orb = cv2.ORB_create()
     kp1, des1 = orb.detectAndCompute(img1, None)
@@ -83,7 +89,9 @@ def get_angle(img1, img2):
     angle = np.degrees(np.arctan2(M[1, 0], M[0, 0]))
     return angle
 
-# gets the external contours from binary image
+'''
+gets the external contours from binary image
+'''
 def external_countur_get(bin_img):
     contours, _ = cv2.findContours(bin_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     filtered_contours = []
@@ -93,7 +101,9 @@ def external_countur_get(bin_img):
             filtered_contours.append(cnt)
     return filtered_contours
 
-# helper to get the longest countur from list
+'''
+helper to get the longest countur from list
+'''
 def longest_contour(contour):
     if len(contour) > 0: contour = contour[0]
     return contour

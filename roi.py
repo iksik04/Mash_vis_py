@@ -9,7 +9,9 @@ import cv2
 import constants as c
 import img_process as ip
 
-# ROI geometry
+'''
+ROI geometry
+'''
 @dataclass
 class RoiGeometry:
     offset: tuple
@@ -32,13 +34,17 @@ class RoiGeometry:
                          [-self.w/2,  self.h/2]], dtype=np.float32)
         return np.intp(half @ R.T + roi_center), roi_center, R
 
-# Reference
+'''
+Reference
+'''
 @dataclass
 class Reference:
     image: np.ndarray
     center: tuple
 
-# Collect together ROI geometry and ref
+'''
+Collect together ROI geometry and ref
+'''
 @dataclass
 class RefState:
     geometry: RoiGeometry | None = None
@@ -56,7 +62,9 @@ class RefState:
         self.prev_angle = raw_angle
         return raw_angle
 
-# init ref ROI (select on the image)
+'''
+init ref ROI (select on the image)
+'''
 def init_reference(frame) -> RefState:
     x0, y0, w, h = cv2.selectROI("Select ROI", frame, True, False)
     cv2.destroyWindow("Select ROI")
@@ -87,7 +95,9 @@ def draw_roi(frame, state: RefState, cur_center):
     cv2.polylines(frame, [pts], True, c.BLUE, 2)
     return state
 
-# cuts aligned ROI from frame
+'''
+cuts aligned ROI from frame
+'''
 def extract_aligned_roi(frame, state: RefState, cur_center, d_angle):
     if not state.ready:
         return None
