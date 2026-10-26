@@ -156,15 +156,15 @@ def test4():
         if contour is not None:
             cur_center = cv2.minAreaRect(contour)[0]
 
-        tracker = roi.draw_roi(frame, tracker, cur_center)
+        roi.draw_roi(frame, tracker, cur_center)
 
         img = ip.render_img(frame, contour=contour, center=True)
         cv2.imshow("Test", img)
 
         if last_text:
-            cv2.putText(frame, f"OCR: {last_text}", (10, 30),
+            cv2.putText(img, f"OCR: {last_text}", (10, 30),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.8, c.GREEN, 2)
-            cv2.imshow("Test", frame)
+            cv2.imshow("Test", img)
 
         key = cv2.waitKey(1) & 0xFF
         if key == ord('q'):
@@ -194,7 +194,7 @@ def test4():
 
 
 def main():
-    test1()
+    test4()
 
 if __name__ == "__main__":
     main()

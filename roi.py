@@ -118,7 +118,6 @@ def draw_roi(frame, tracker: RoiTracker, cur_center):
     d_angle = tracker.update_angle(ip.get_angle(tracker.reference.image, frame))
     pts, _, _ = tracker.geometry.corners(cur_center, d_angle)
     cv2.polylines(frame, [pts], True, c.BLUE, 2)
-    return tracker
 
 '''
 cuts aligned ROI from frame
