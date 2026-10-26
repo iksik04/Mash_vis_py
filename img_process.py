@@ -3,8 +3,24 @@
 '''
 import cv2
 import numpy as np
+from dataclasses import dataclass
 
 import constants as c
+
+@dataclass
+class FrameContext:
+    frame: np.ndarray
+    bin: np.ndarray | None = None
+    main_contour: np.ndarray | None = None
+    center: tuple | None = None
+
+
+def build_context(frame, low_threshold=c.BINARYSATION_LOW_THRESHOLD):
+    bin_img = rgb2bin(frame, low_threshold)
+    contour = get_main_contour(bin_img)
+    center = cv2.minAreaRect(contour)[0] if contour is not None else None
+    return FrameContext(frame=frame, bin=bin_img,
+                        main_contour=contour, center=center)
 
 
 '''
@@ -70,15 +86,15 @@ def get_angle(img1, img2):
 
     if des1 is None or des2 is None:
         print("--ERR: get_angle des1 or des2 is None")
-        return 0.0
-    
+        return float('nan')
+
     bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
     matches = bf.match(des1, des2)
     matches = sorted(matches, key=lambda x: x.distance)
     matches = matches[:50]
     if not matches:
         print("--ERR: get_angle matches is False")
-        return 0.0 
+        return float('nan')
 
     src_pts = np.float32([kp1[m.queryIdx].pt for m in matches]).reshape(-1, 1, 2)
     dst_pts = np.float32([kp2[m.trainIdx].pt for m in matches]).reshape(-1, 1, 2)
@@ -86,10 +102,9 @@ def get_angle(img1, img2):
     M, _ = cv2.estimateAffinePartial2D(src_pts, dst_pts)
     if M is None:
         print("--ERR: get_angle M is None")
-        return  0.0
-    
-    angle = np.degrees(np.arctan2(M[1, 0], M[0, 0]))
-    return angle
+        return float('nan')
+
+    return float(np.degrees(np.arctan2(M[1, 0], M[0, 0])))
 
 '''
 gets the external contours from binary image

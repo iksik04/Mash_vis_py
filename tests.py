@@ -99,7 +99,7 @@ def test3():
         print("Cam not found")
         exit()
 
-    tracker = None  
+    trackers = roi.RoiSet()
 
     while True:
         ret, frame = cap.read()
@@ -107,25 +107,22 @@ def test3():
             print("Can not get picture")
             break
 
-        cur_center = None
+        ctx = ip.build_context(frame)
+        trackers.process(ctx)
+        trackers.draw(frame)
 
-        bin_frame = ip.rgb2bin(frame, low_threshold=c.BINARYSATION_LOW_THRESHOLD)
-        contour = ip.get_main_contour(bin_frame)
-
-        if contour is not None:
-            cur_center = cv2.minAreaRect(contour)[0]
-
-       
-        tracker = roi.draw_roi(frame, tracker, cur_center)
-
-        img = ip.render_img(frame, contour=contour, center=True)
+        img = ip.render_img(frame, contour=ctx.main_contour, center=True)
         cv2.imshow("Test", img)
 
         key = cv2.waitKey(1) & 0xFF
         if key == ord('q'):
             break
         elif key == ord('r'):
-            tracker = roi.init_reference(frame)
+            tr = roi.init_reference(frame, name=f"roi_{len(trackers)}")
+            if tr is not None:
+                trackers.add(tr)
+        elif key == ord('d') and len(trackers):
+            trackers.remove(next(reversed(trackers.trackers)))
 
     cap.release()
     cv2.destroyAllWindows()
@@ -140,61 +137,57 @@ def test4():
         print("Cam not found")
         return
 
-    tracker = None
-    last_text = None
+    trackers = roi.RoiSet()
+    last_texts: dict[str, str | None] = {}
 
     while True:
         ret, frame = cap.read()
         if not ret:
             break
 
-        cur_center = None
-        contour = None
+        ctx = ip.build_context(frame)
+        trackers.process(ctx)
+        trackers.draw(frame)
 
-        bin_frame = ip.rgb2bin(frame, low_threshold=160)
-        contour = ip.get_main_contour(bin_frame)
-        if contour is not None:
-            cur_center = cv2.minAreaRect(contour)[0]
-
-        roi.draw_roi(frame, tracker, cur_center)
-
-        img = ip.render_img(frame, contour=contour, center=True)
+        img = ip.render_img(frame, contour=ctx.main_contour, center=True)
         cv2.imshow("Test", img)
-
-        if last_text:
-            cv2.putText(img, f"OCR: {last_text}", (10, 30),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, c.GREEN, 2)
-            cv2.imshow("Test", img)
 
         key = cv2.waitKey(1) & 0xFF
         if key == ord('q'):
             break
         elif key == ord('r'):
             cv2.destroyWindow("Test")
-            tracker = roi.init_reference(frame)
-            last_text = None
+            tr = roi.init_reference(frame, name=f"roi_{len(trackers)}")
+            if tr is not None:
+                trackers.add(tr)
+            last_texts = {}
             cv2.namedWindow("Test", cv2.WINDOW_NORMAL)
             cv2.waitKey(1)
         elif key == ord('o'):
-            if tracker is not None and tracker.ready and cur_center is not None:
-                d_angle = tracker.prev_angle or 0.0
-                roi_img = roi.extract_aligned_roi(frame, tracker, cur_center, d_angle)
-                '''
-                # debug
-                if roi_img is not None:
-                    cv2.imshow("ROI to OCR", roi_img)
-                '''
-                last_text = ocr.recognize(roi_img, allowlist=c.test_allowlist)
-                print("--OCR:", last_text)
-            else:
+            if not trackers.ready():
                 print("--OCR: no ref or obj, press 'r'")
+                continue
+            for name, roi_img in trackers.extract(frame).items():
+                if roi_img is None:
+                    continue
+                txt = ocr.recognize(roi_img, allowlist=c.test_allowlist)
+                last_texts[name] = txt
+                print(f"--OCR [{name}]:", txt)
+
+        if last_texts:
+            overlay = frame.copy()
+            for i, (name, txt) in enumerate(last_texts.items()):
+                if txt:
+                    cv2.putText(overlay, f"{name}: {txt}", (10, 30 + 30 * i),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.8, c.GREEN, 2)
+            cv2.imshow("Test", overlay)
 
     cap.release()
     cv2.destroyAllWindows()
 
 
 def main():
-    test4()
+    test3()
 
 if __name__ == "__main__":
     main()

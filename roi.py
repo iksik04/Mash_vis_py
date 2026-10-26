@@ -2,7 +2,7 @@
 Functions working with ROI: create, draw, update
 '''
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import numpy as np
 import cv2
 
@@ -43,13 +43,17 @@ class Reference:
     center: tuple
 
 '''
-Collect together ROI geometry and ref
+Single ROI tracker with its own state
 '''
 @dataclass
 class RoiTracker:
     geometry: RoiGeometry
+    name: str = "roi"
     reference: Reference | None = None
     prev_angle: float | None = None
+    last_center: tuple | None = None
+    last_angle: float | None = None
+    lost: bool = False
 
     @property
     def ready(self) -> bool:
@@ -63,34 +67,65 @@ class RoiTracker:
         self.prev_angle = raw_angle
         return raw_angle
 
+    def tick(self, ctx: 'ip.FrameContext') -> bool:
+        if not self.ready or ctx.center is None:
+            self.lost = True
+            return False
+
+        raw = ip.get_angle(self.reference.image, ctx.frame)
+        self.last_angle = self.update_angle(raw)
+        self.last_center = ctx.center
+        self.lost = False
+        return True
+
+    def corners(self):
+        if self.last_center is None:
+            return None, None, None
+        return self.geometry.corners(self.last_center, self.last_angle or 0.0)
+
+
 '''
-for several ROIs
-'''
+Set of named ROI trackers + per-frame orchestration
 '''
 @dataclass
 class RoiSet:
     trackers: dict[str, RoiTracker] = field(default_factory=dict)
 
-    def add(self, key: str, tracker: RoiTracker) -> None:
-        self.trackers[key] = tracker
+    def add(self, tracker: RoiTracker) -> None:
+        self.trackers[tracker.name] = tracker
+
+    def remove(self, name: str) -> None:
+        self.trackers.pop(name, None)
+
+    def __getitem__(self, name: str) -> RoiTracker:
+        return self.trackers[name]
+
+    def __len__(self) -> int:
+        return len(self.trackers)
 
     def ready(self) -> bool:
-        return all(t.ready for t in self.trackers.values())
+        return bool(self.trackers) and all(t.ready for t in self.trackers.values())
 
-    def draw_all(self, frame, cur_center) -> None:
-        for t in self.trackers.values():
-            draw_roi(frame, t, cur_center)
+    def process(self, ctx: 'ip.FrameContext') -> dict[str, bool]:
+        return {name: t.tick(ctx) for name, t in self.trackers.items()}
 
-    def update_angles(self, frame) -> None:
-        raw = ip.get_angle(...)  # считается один раз на кадр
+    def draw(self, frame, color=c.BLUE, width=c.ROI_LINE_WIDTH) -> None:
         for t in self.trackers.values():
-            t.update_angle(raw)
-'''
+            pts, _, _ = t.corners()
+            if pts is None:
+                continue
+            cv2.polylines(frame, [pts], True, color, width)
+
+    def extract(self, frame) -> dict[str, np.ndarray | None]:
+        return {
+            name: (extract_aligned_roi(frame, t) if not t.lost else None)
+            for name, t in self.trackers.items()
+        }
 
 '''
 init ref ROI (select on the image)
 '''
-def init_reference(frame) -> RoiTracker | None:
+def init_reference(frame, name: str = "roi") -> RoiTracker | None:
     x0, y0, w, h = cv2.selectROI("Select ROI", frame, True, False)
     cv2.destroyWindow("Select ROI")
     if w <= 0 or h <= 0:
@@ -106,27 +141,34 @@ def init_reference(frame) -> RoiTracker | None:
     roi_cx, roi_cy = x0 + w / 2, y0 + h / 2
 
     return RoiTracker(
+        name=name,
         geometry=RoiGeometry(
             offset=(roi_cx - ref_center[0], roi_cy - ref_center[1]),
             w=float(w), h=float(h)),
         reference=Reference(frame.copy(), ref_center),
     )
 
-def draw_roi(frame, tracker: RoiTracker, cur_center):
-    if tracker is None or not tracker.ready or cur_center is None:
-        return tracker
-    d_angle = tracker.update_angle(ip.get_angle(tracker.reference.image, frame))
-    pts, _, _ = tracker.geometry.corners(cur_center, d_angle)
+'''
+Draw single ROI (kept for backward compatibility).
+Does NOT compute angle — requires tracker.tick() called before.
+'''
+def draw_roi(frame, tracker: RoiTracker) -> None:
+    if tracker is None or not tracker.ready:
+        return
+    pts, _, _ = tracker.corners()
+    if pts is None:
+        return
     cv2.polylines(frame, [pts], True, c.BLUE, 2)
 
 '''
-cuts aligned ROI from frame
+cuts aligned ROI from frame (angle/center taken from tracker state)
 '''
-def extract_aligned_roi(frame, tracker: RoiTracker, cur_center, d_angle):
-    if tracker is None or not tracker.ready:
+def extract_aligned_roi(frame, tracker: RoiTracker):
+    if tracker is None or not tracker.ready or tracker.last_center is None:
         return None
 
-    _, roi_center, R = tracker.geometry.corners(cur_center, d_angle)
+    _, roi_center, R = tracker.geometry.corners(
+        tracker.last_center, tracker.last_angle or 0.0)
     w, h = int(tracker.geometry.w), int(tracker.geometry.h)
 
     Rt = R.T
