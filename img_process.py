@@ -25,7 +25,7 @@ def render_img(image, contour=None, rectangle=False, center=False,
              center_color=c.GREEN, center_size=None, center_width=c.CENTER_LINE_WIDTH
             ):
 
-    if len(contour) == 0:
+    if contour is None or len(contour) == 0:
         contour = None
 
     if len(image.shape) == 2:
@@ -103,14 +103,16 @@ def external_countur_get(bin_img):
             filtered_contours.append(cnt)
     if len(filtered_contours) == 0:
         print("--ERR: external_countur_get no contours found")
+        return None
     return filtered_contours
 
 '''
 helper to get the longest countur from list
 '''
 def longest_contour(contour):
-    if len(contour) > 0: contour = contour[0]
-    else: print("--ERR: longest_contour no contours found")
-    return contour
+    if contour is None or len(contour) == 0:
+        print("--ERR: longest_contour no contours found")
+        return None
+    return contour[0]
 # if __name__ == "__main__":
 #    main()

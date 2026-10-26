@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import ocr
 
 import img_process as ip
 
@@ -101,7 +102,7 @@ def test3():
         print("Cam not found")
         exit()
 
-    state = roi.RefState()   
+    tracker = None  
 
     while True:
         ret, frame = cap.read()
@@ -111,13 +112,15 @@ def test3():
 
         cur_center = None
 
-        bin_frame = ip.rgb2bin(frame, low_threshold=160)
+        bin_frame = ip.rgb2bin(frame, low_threshold=c.BINARYSATION_LOW_THRESHOLD)
         contour = ip.external_countur_get(bin_frame)
-        contour = ip.longest_contour(contour)
-        rect = cv2.minAreaRect(contour)
-        cur_center = rect[0]
+        if contour is not None:
+            contour = ip.longest_contour(contour)
+            rect = cv2.minAreaRect(contour)
+            cur_center = rect[0]
 
-        state = roi.draw_roi(frame, state, cur_center)
+       
+        tracker = roi.draw_roi(frame, tracker, cur_center)
 
         img = ip.render_img(frame, contour=contour, center=True)
         cv2.imshow("Test", img)
@@ -126,13 +129,12 @@ def test3():
         if key == ord('q'):
             break
         elif key == ord('r'):
-            state = roi.init_reference(frame)
+            tracker = roi.init_reference(frame)
 
     cap.release()
     cv2.destroyAllWindows()
 
 def test4():
-    import ocr
     ocr.get_reader()
 
     cv2.namedWindow("Test", cv2.WINDOW_NORMAL)
@@ -142,9 +144,8 @@ def test4():
         print("Cam not found")
         return
 
-    state = roi.RefState()
+    tracker = None
     last_text = None
-    had_contours = True
 
     while True:
         ret, frame = cap.read()
@@ -156,17 +157,14 @@ def test4():
 
         bin_frame = ip.rgb2bin(frame, low_threshold=160)
         contour = ip.external_countur_get(bin_frame)
-        contour = ip.longest_contour(contour)
-        if len(contour) == 0:
-            if had_contours:
-                print("--ERR: no contours found")
-                had_contours = False
-        else:
-            had_contours = True
+        if contour is not None:
+            contour = ip.longest_contour(contour)
             rect = cv2.minAreaRect(contour)
             cur_center = rect[0]
+        else:
+            contour = None
 
-        state = roi.draw_roi(frame, state, cur_center)
+        tracker = roi.draw_roi(frame, tracker, cur_center)
 
         img = ip.render_img(frame, contour=contour, center=True)
         cv2.imshow("Test", img)
@@ -181,15 +179,14 @@ def test4():
             break
         elif key == ord('r'):
             cv2.destroyWindow("Test")
-            state = roi.init_reference(frame)
+            tracker = roi.init_reference(frame)
             last_text = None
             cv2.namedWindow("Test", cv2.WINDOW_NORMAL)
             cv2.waitKey(1)
         elif key == ord('o'):
-            if state.ready and cur_center is not None:
-                import ocr
-                d_angle = state.prev_angle or 0.0
-                roi_img = roi.extract_aligned_roi(frame, state, cur_center, d_angle)
+            if tracker is not None and tracker.ready and cur_center is not None:
+                d_angle = tracker.prev_angle or 0.0
+                roi_img = roi.extract_aligned_roi(frame, tracker, cur_center, d_angle)
                 '''
                 # debug
                 if roi_img is not None:

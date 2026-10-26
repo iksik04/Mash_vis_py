@@ -46,64 +46,88 @@ class Reference:
 Collect together ROI geometry and ref
 '''
 @dataclass
-class RefState:
-    geometry: RoiGeometry | None = None
+class RoiTracker:
+    geometry: RoiGeometry
     reference: Reference | None = None
     prev_angle: float | None = None
 
     @property
     def ready(self) -> bool:
-        return self.geometry is not None and self.reference is not None
+        return self.reference is not None
 
     def update_angle(self, raw_angle: float) -> float:
+        if not np.isfinite(raw_angle):
+            return self.prev_angle if self.prev_angle is not None else 0.0
         if self.prev_angle is not None:
-            while raw_angle - self.prev_angle > 180: raw_angle -= 360
-            while raw_angle - self.prev_angle < -180: raw_angle += 360
+            raw_angle = self.prev_angle + ((raw_angle - self.prev_angle + 180) % 360) - 180
         self.prev_angle = raw_angle
         return raw_angle
 
 '''
+for several ROIs
+'''
+'''
+@dataclass
+class RoiSet:
+    trackers: dict[str, RoiTracker] = field(default_factory=dict)
+
+    def add(self, key: str, tracker: RoiTracker) -> None:
+        self.trackers[key] = tracker
+
+    def ready(self) -> bool:
+        return all(t.ready for t in self.trackers.values())
+
+    def draw_all(self, frame, cur_center) -> None:
+        for t in self.trackers.values():
+            draw_roi(frame, t, cur_center)
+
+    def update_angles(self, frame) -> None:
+        raw = ip.get_angle(...)  # считается один раз на кадр
+        for t in self.trackers.values():
+            t.update_angle(raw)
+'''
+
+'''
 init ref ROI (select on the image)
 '''
-def init_reference(frame) -> RefState:
+def init_reference(frame) -> RoiTracker | None:
     x0, y0, w, h = cv2.selectROI("Select ROI", frame, True, False)
     cv2.destroyWindow("Select ROI")
     if w <= 0 or h <= 0:
-        return RefState()
+        return None
 
-    contours = ip.external_countur_get(ip.rgb2bin(frame, low_threshold=160))
+    contours = ip.external_countur_get(ip.rgb2bin(frame, low_threshold=c.BINARYSATION_LOW_THRESHOLD))
     contours = ip.longest_contour(contours)
-    if len(contours) == 0:
-        return RefState()
+    if contours is None or len(contours) == 0:
+        return None
 
     ref_center = cv2.minAreaRect(contours)[0]
     roi_cx, roi_cy = x0 + w / 2, y0 + h / 2
 
-    return RefState(
+    return RoiTracker(
         geometry=RoiGeometry(
             offset=(roi_cx - ref_center[0], roi_cy - ref_center[1]),
             w=float(w), h=float(h)),
         reference=Reference(frame.copy(), ref_center),
     )
 
-def draw_roi(frame, state: RefState, cur_center):
-    if not state.ready or cur_center is None:
-        return state
-
-    d_angle = state.update_angle(ip.get_angle(state.reference.image, frame))
-    pts, _, _ = state.geometry.corners(cur_center, d_angle)
+def draw_roi(frame, tracker: RoiTracker, cur_center):
+    if tracker is None or not tracker.ready or cur_center is None:
+        return tracker
+    d_angle = tracker.update_angle(ip.get_angle(tracker.reference.image, frame))
+    pts, _, _ = tracker.geometry.corners(cur_center, d_angle)
     cv2.polylines(frame, [pts], True, c.BLUE, 2)
-    return state
+    return tracker
 
 '''
 cuts aligned ROI from frame
 '''
-def extract_aligned_roi(frame, state: RefState, cur_center, d_angle):
-    if not state.ready:
+def extract_aligned_roi(frame, tracker: RoiTracker, cur_center, d_angle):
+    if tracker is None or not tracker.ready:
         return None
 
-    _, roi_center, R = state.geometry.corners(cur_center, d_angle)
-    w, h = int(state.geometry.w), int(state.geometry.h)
+    _, roi_center, R = tracker.geometry.corners(cur_center, d_angle)
+    w, h = int(tracker.geometry.w), int(tracker.geometry.h)
 
     Rt = R.T
     M = np.zeros((2, 3), np.float32)
