@@ -35,7 +35,7 @@ class RoiGeometry:
         return np.intp(half @ R.T + roi_center), roi_center, R
 
 '''
-Reference
+Reference image, center is a center of biggest contour
 '''
 @dataclass
 class Reference:

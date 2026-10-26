@@ -1,5 +1,6 @@
-import cv2
-MIN_EXT_CONTOUR_LENGTH = 50  # минимальная длина периметра контура в пикселях
+MIN_EXT_CONTOUR_LENGTH = 50  # min contour len, pxl
+
+OCR_PREPROCESS_SCALE = 3     # scale for resize in ocr/preprocess_for_ocr
 
 # Line width
 CONTOUR_LINE_WIDTH = 8

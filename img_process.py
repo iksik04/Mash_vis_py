@@ -25,7 +25,7 @@ def render_img(image, contour=None, rectangle=False, center=False,
              center_color=c.GREEN, center_size=None, center_width=c.CENTER_LINE_WIDTH
             ):
 
-    if len(contour) == 0 or contour is None:
+    if len(contour) == 0:
         contour = None
 
     if len(image.shape) == 2:
@@ -69,6 +69,7 @@ def get_angle(img1, img2):
     kp2, des2 = orb.detectAndCompute(img2, None)
 
     if des1 is None or des2 is None:
+        print("--ERR: get_angle des1 or des2 is None")
         return 0.0
     
     bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
@@ -76,6 +77,7 @@ def get_angle(img1, img2):
     matches = sorted(matches, key=lambda x: x.distance)
     matches = matches[:50]
     if not matches:
+        print("--ERR: get_angle matches is False")
         return 0.0 
 
     src_pts = np.float32([kp1[m.queryIdx].pt for m in matches]).reshape(-1, 1, 2)
@@ -83,7 +85,7 @@ def get_angle(img1, img2):
 
     M, _ = cv2.estimateAffinePartial2D(src_pts, dst_pts)
     if M is None:
-        print("--ERR: AffinePartial2D")
+        print("--ERR: get_angle M is None")
         return  0.0
     
     angle = np.degrees(np.arctan2(M[1, 0], M[0, 0]))
@@ -99,6 +101,8 @@ def external_countur_get(bin_img):
         length = cv2.arcLength(cnt, True)
         if length >= c.MIN_EXT_CONTOUR_LENGTH:
             filtered_contours.append(cnt)
+    if len(filtered_contours) == 0:
+        print("--ERR: external_countur_get no contours found")
     return filtered_contours
 
 '''
@@ -106,6 +110,7 @@ helper to get the longest countur from list
 '''
 def longest_contour(contour):
     if len(contour) > 0: contour = contour[0]
+    else: print("--ERR: longest_contour no contours found")
     return contour
 # if __name__ == "__main__":
 #    main()

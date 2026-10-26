@@ -1,6 +1,7 @@
 import cv2
-import numpy as np
 import easyocr
+
+import constants as c
 
 _reader = None
 
@@ -16,7 +17,7 @@ def get_reader(langs=('ru', 'en'), gpu=False):
 '''
 upscale + rgb2gr preprocess for OCR
 '''
-def preprocess_for_ocr(roi, scale=3):
+def preprocess_for_ocr(roi, scale=c.OCR_PREPROCESS_SCALE):
     big = cv2.resize(roi, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
     gray = cv2.cvtColor(big, cv2.COLOR_BGR2GRAY)
     gray = cv2.equalizeHist(gray)
@@ -25,7 +26,9 @@ def preprocess_for_ocr(roi, scale=3):
 
 def recognize(roi, allowlist=None):
     if roi is None or roi.size == 0:
+        print("--ERR: recognize no ROI choosed")
         return None
+    
     img = preprocess_for_ocr(roi)
     reader = get_reader()
     res = reader.readtext(img, detail=0, allowlist=allowlist)
