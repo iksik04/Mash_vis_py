@@ -15,10 +15,8 @@ def test1():
     ref_bin_img = ip.rgb2bin(ref_img)
     test_bin_img = ip.rgb2bin(test_img)
     
-    ref_ext_countour = ip.external_countur_get(ref_bin_img) # only first one
-    ref_ext_countour = ip.longest_contour(ref_ext_countour)
-    test_ext_countour = ip.external_countur_get(test_bin_img) # only first one
-    test_ext_countour = ip.longest_contour(test_ext_countour)
+    ref_ext_countour = ip.get_main_contour(ref_bin_img)
+    test_ext_countour = ip.get_main_contour(test_bin_img)
     
     match_value = cv2.matchShapes(ref_ext_countour, test_ext_countour, cv2.CONTOURS_MATCH_I1, 0.0)
     
@@ -80,8 +78,7 @@ def test2():
 
         _, binary_img = cv2.threshold(gray_img, low_threshold, 255, cv2.THRESH_BINARY)
 
-        contour = ip.external_countur_get(binary_img)
-        contour = ip.longest_contour(contour)
+        contour = ip.get_main_contour(binary_img)
 
         img = ip.render_img(binary_img, contour=contour, contour_width=4, 
                    rectangle=True, rect_width=4, 
@@ -113,11 +110,10 @@ def test3():
         cur_center = None
 
         bin_frame = ip.rgb2bin(frame, low_threshold=c.BINARYSATION_LOW_THRESHOLD)
-        contour = ip.external_countur_get(bin_frame)
+        contour = ip.get_main_contour(bin_frame)
+
         if contour is not None:
-            contour = ip.longest_contour(contour)
-            rect = cv2.minAreaRect(contour)
-            cur_center = rect[0]
+            cur_center = cv2.minAreaRect(contour)[0]
 
        
         tracker = roi.draw_roi(frame, tracker, cur_center)
@@ -156,13 +152,9 @@ def test4():
         contour = None
 
         bin_frame = ip.rgb2bin(frame, low_threshold=160)
-        contour = ip.external_countur_get(bin_frame)
+        contour = ip.get_main_contour(bin_frame)
         if contour is not None:
-            contour = ip.longest_contour(contour)
-            rect = cv2.minAreaRect(contour)
-            cur_center = rect[0]
-        else:
-            contour = None
+            cur_center = cv2.minAreaRect(contour)[0]
 
         tracker = roi.draw_roi(frame, tracker, cur_center)
 
@@ -202,7 +194,7 @@ def test4():
 
 
 def main():
-    test4()
+    test1()
 
 if __name__ == "__main__":
     main()

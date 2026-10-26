@@ -96,12 +96,13 @@ def init_reference(frame) -> RoiTracker | None:
     if w <= 0 or h <= 0:
         return None
 
-    contours = ip.external_countur_get(ip.rgb2bin(frame, low_threshold=c.BINARYSATION_LOW_THRESHOLD))
-    contours = ip.longest_contour(contours)
-    if contours is None or len(contours) == 0:
+    contour = ip.get_main_contour(
+        ip.rgb2bin(frame, low_threshold=c.BINARYSATION_LOW_THRESHOLD)
+    )
+    if contour is None:
         return None
 
-    ref_center = cv2.minAreaRect(contours)[0]
+    ref_center = cv2.minAreaRect(contour)[0]
     roi_cx, roi_cy = x0 + w / 2, y0 + h / 2
 
     return RoiTracker(

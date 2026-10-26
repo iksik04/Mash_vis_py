@@ -113,6 +113,15 @@ def longest_contour(contour):
     if contour is None or len(contour) == 0:
         print("--ERR: longest_contour no contours found")
         return None
-    return contour[0]
+    return max(contour, key=lambda c: cv2.arcLength(c, True))
+
+'''
+external_countur_get + longest_contour
+'''
+def get_main_contour(bin_img):
+    contours = external_countur_get(bin_img)
+    if contours is None:
+        return None
+    return longest_contour(contours)
 # if __name__ == "__main__":
 #    main()

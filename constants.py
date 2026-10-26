@@ -1,3 +1,4 @@
+
 MIN_EXT_CONTOUR_LENGTH = 50  # min contour len, pxl
 
 OCR_PREPROCESS_SCALE = 3     # scale for resize in ocr/preprocess_for_ocr
