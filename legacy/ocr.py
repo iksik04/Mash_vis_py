@@ -1,7 +1,7 @@
 import cv2
 import easyocr
 
-import constants as c
+import legacy.constants as c
 
 _reader = None
 

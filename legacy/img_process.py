@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 from dataclasses import dataclass
 
-import constants as c
+import legacy.constants as c
 
 @dataclass
 class FrameContext:
@@ -14,17 +14,9 @@ class FrameContext:
     main_contour: np.ndarray | None = None
     center: tuple | None = None
 
-'''
-Reference image, center is a center of biggest contour
-'''
-@dataclass
-class Reference:
-    image: np.ndarray
-    center: tuple
 
-
-def build_context(frame, low_threshold=c.BINARYSATION_LOW_THRESHOLD):
-    bin_img = rgb2bin(frame, low_threshold)
+def build_context(frame, low_threshold=c.BINARYSATION_LOW_THRESHOLD, high_threshold=c.BINARYSATION_HIGH_THRESHOLD):
+    bin_img = rgb2bin(frame, low_threshold, high_threshold)
     contour = get_main_contour(bin_img)
     center = cv2.minAreaRect(contour)[0] if contour is not None else None
     return FrameContext(frame=frame, bin=bin_img,
@@ -37,7 +29,6 @@ turns rgb image into binary
 def rgb2bin(img, low_threshold = c.BINARYSATION_LOW_THRESHOLD, high_threshold = c.BINARYSATION_HIGH_THRESHOLD):
     gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     _, binary_img = cv2.threshold(gray_img, low_threshold, high_threshold, cv2.THRESH_BINARY)
-
     return binary_img
 
 '''

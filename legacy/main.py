@@ -1,8 +1,8 @@
 import cv2
 import numpy as np
 
-import constants as c
-import tests as t
+import legacy.constants as c
+import legacy.tests as t
 
 
 def main():

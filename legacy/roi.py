@@ -6,10 +6,10 @@ from dataclasses import dataclass, field
 import numpy as np
 import cv2
 
-import constants as c
-import img_process as ip
+import legacy.constants as c
+import legacy.img_process as ip
 
-from roi_selector import select_rotated_roi
+from legacy.roi_selector import select_rotated_roi
 
 '''
 ROI geometry
@@ -88,7 +88,7 @@ Set of named ROI trackers + per-frame orchestration
 @dataclass
 class RoiSet:
     trackers: dict[str, RoiTracker] = field(default_factory=dict)
-    reference: ip.Reference | None = None
+    reference: ip.FrameContext | None = None
     def add(self, tracker: RoiTracker) -> None:
         self.trackers[tracker.name] = tracker
 
@@ -168,6 +168,12 @@ def draw_roi(frame, tracker: RoiTracker) -> None:
         return
     cv2.polylines(frame, [pts], True, c.BLUE, 2)
 
+
+
+
+
+
+## DEBUG
 '''
 cuts aligned ROI from frame (angle/center taken from tracker state)
 '''
@@ -187,3 +193,4 @@ def extract_aligned_roi(frame, tracker: RoiTracker):
     roi = cv2.warpAffine(frame, M, (w, h), flags=cv2.INTER_CUBIC,
                          borderMode=cv2.BORDER_REPLICATE)
     return roi if roi.size > 0 else None
+## DEBUG

@@ -1,7 +1,7 @@
 import cv2
-import img_process as ip
-import roi
-import preset
+import legacy.img_process as ip
+import legacy.roi as roi
+import legacy.preset as preset
 
 
 def ref_init(img, preset_path = None):
@@ -10,7 +10,7 @@ def ref_init(img, preset_path = None):
         print("--ERR: no main contour in captured frame")
         return None
 
-    ref = ip.Reference(image=img.copy(), center=ctx.center)
+    ref = ip.FrameContext(image=img.copy(), center=ctx.center)
     rs = roi.RoiSet(reference=ref)
     tr = roi.init_reference(img, ref.center, name=f"roi_{len(rs)}")
     if tr is not None:

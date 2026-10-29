@@ -1,8 +1,8 @@
 import json, os
 import cv2
 
-import img_process as ip
-import roi
+import legacy.img_process as ip
+import legacy.roi as roi
 
 PRESET_VERSION = 1
 
@@ -11,7 +11,7 @@ def _rel(path, base):
     return os.path.relpath(path, base)
 
 
-def save_preset(path_json, reference: ip.Reference, trackers: roi.RoiSet,
+def save_preset(path_json, reference: ip.FrameContext, trackers: roi.RoiSet,
                 params: dict | None = None) -> None:
     base = os.path.dirname(os.path.abspath(path_json))
     os.makedirs(base, exist_ok=True)
@@ -42,7 +42,7 @@ def save_preset(path_json, reference: ip.Reference, trackers: roi.RoiSet,
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
-def load_preset(path_json) -> tuple[ip.Reference, roi.RoiSet, dict]:
+def load_preset(path_json) -> tuple[ip.FrameContext, roi.RoiSet, dict]:
     with open(path_json, "r", encoding="utf-8") as f:
         data = json.load(f)
 

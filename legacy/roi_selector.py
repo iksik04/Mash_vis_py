@@ -11,7 +11,7 @@ Controls:
 import numpy as np
 import cv2
 
-import constants as c
+import legacy.constants as c
 
 # handle grab radius (px)
 _HANDLE_RADIUS = 10
