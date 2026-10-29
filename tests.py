@@ -198,7 +198,6 @@ def test5():
         print("--ERR: Cam not found")
         return
     
-    trackers = roi.RoiSet()
 
     while True:
         ret, frame = cap.read()
@@ -215,12 +214,11 @@ def test5():
             break
         elif key == ord('r'):
             cv2.destroyWindow(window_name)
-            process.ref_init(frame, c.precet_path)
+            Rois = process.ref_init(frame, c.precet_path)
             cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
             cv2.waitKey(1)
 
 
-    print(trackers)
     cap.release()
     cv2.destroyAllWindows()
 
