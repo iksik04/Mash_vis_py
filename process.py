@@ -1,11 +1,24 @@
-
+import cv2
+import img_process as ip
 import roi
+import preset
 
-def ref_init(img, trackers, save2file = False):
 
+def ref_init(img, preset_path, save2file = False):
+    ctx = ip.build_context(img)
+    if ctx.center is None:
+        print("--ERR: no main contour in captured frame")
+        return None
 
-    tr = roi.init_reference(img, name=f"roi_{len(trackers)}")
+    ref = ip.Reference(image=img.copy(), center=ctx.center)
+    rs = roi.RoiSet(reference=ref)
+    win = "Init reference"
+    cv2.namedWindow(win, cv2.WINDOW_NORMAL)
+    tr = roi.init_reference(img, ref.center, name=f"roi_{len(rs)}")
     if tr is not None:
-        trackers.add(tr)
-
-    return trackers
+        rs.add(tr)
+        cv2.namedWindow(win, cv2.WINDOW_NORMAL)
+    if save2file and len(rs):
+        preset.save_preset(preset_path, ref, rs, params)
+        print(f"--MES: preset saved to {preset_path}")
+        return rs

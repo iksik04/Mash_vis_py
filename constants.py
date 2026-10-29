@@ -23,6 +23,8 @@ BINARYSATION_HIGH_THRESHOLD = 255
 ref_image_path = "images/im1.jpg"
 test_image_path = "images/im2.jpg"
 
+precet_path = "presets/default.json"
+
 # symbols allowlists 
 test_allowlist = 'EVOILGF'
 

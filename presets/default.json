@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "reference_image": "default.jpg",
+  "reference_center": [
+    324.5622253417969,
+    249.72738647460938
+  ],
+  "rois": [
+    {
+      "name": "roi_0",
+      "offset": [
+        77.43777465820312,
+        -26.727386474609375
+      ],
+      "w": 118.0,
+      "h": 62.0,
+      "angle": 0.0,
+      "allowlist": null
+    }
+  ],
+  "params": {}
+}

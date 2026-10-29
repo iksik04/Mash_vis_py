@@ -215,7 +215,7 @@ def test5():
             break
         elif key == ord('r'):
             cv2.destroyWindow(window_name)
-            process.ref_init(frame, trackers, save2file = True)
+            process.ref_init(frame, c.precet_path)
             cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
             cv2.waitKey(1)
 

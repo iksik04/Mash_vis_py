@@ -41,13 +41,6 @@ class RoiGeometry:
                          [-self.w/2,  self.h/2]], dtype=np.float32)
         return np.intp(half @ R_roi.T + roi_center), roi_center, R_roi
 
-'''
-Reference image, center is a center of biggest contour
-'''
-@dataclass
-class Reference:
-    image: np.ndarray
-    center: tuple
 
 '''
 Single ROI tracker with its own state
@@ -56,7 +49,7 @@ Single ROI tracker with its own state
 class RoiTracker:
     geometry: RoiGeometry
     name: str = "roi"
-    reference: Reference | None = None
+    allowlist: str | None = None 
     prev_angle: float | None = None
     last_center: tuple | None = None
     last_angle: float | None = None
@@ -64,7 +57,7 @@ class RoiTracker:
 
     @property
     def ready(self) -> bool:
-        return self.reference is not None
+        return True
 
     def update_angle(self, raw_angle: float) -> float:
         if not np.isfinite(raw_angle):
@@ -74,13 +67,11 @@ class RoiTracker:
         self.prev_angle = raw_angle
         return raw_angle
 
-    def tick(self, ctx: 'ip.FrameContext') -> bool:
-        if not self.ready or ctx.center is None:
+    def tick(self, ctx: 'ip.FrameContext', raw_angle: float) -> bool:
+        if ctx.center is None or not np.isfinite(raw_angle):
             self.lost = True
             return False
-
-        raw = ip.get_angle(self.reference.image, ctx.frame)
-        self.last_angle = self.update_angle(raw)
+        self.last_angle = self.update_angle(raw_angle)
         self.last_center = ctx.center
         self.lost = False
         return True
@@ -97,7 +88,7 @@ Set of named ROI trackers + per-frame orchestration
 @dataclass
 class RoiSet:
     trackers: dict[str, RoiTracker] = field(default_factory=dict)
-
+    reference: ip.Reference | None = None
     def add(self, tracker: RoiTracker) -> None:
         self.trackers[tracker.name] = tracker
 
@@ -111,10 +102,16 @@ class RoiSet:
         return len(self.trackers)
 
     def ready(self) -> bool:
-        return bool(self.trackers) and all(t.ready for t in self.trackers.values())
+        return self.reference is not None and bool(self.trackers)
 
     def process(self, ctx: 'ip.FrameContext') -> dict[str, bool]:
-        return {name: t.tick(ctx) for name, t in self.trackers.items()}
+        if self.reference is None or ctx.center is None:
+            for t in self.trackers.values():
+                t.lost = True
+            return {n: False for n in self.trackers}
+
+        raw_angle = ip.get_angle(self.reference.image, ctx.frame)
+        return {n: t.tick(ctx, raw_angle) for n, t in self.trackers.items()}
 
     def draw(self, frame, color=c.BLUE, width=c.ROI_LINE_WIDTH) -> None:
         for t in self.trackers.values():
@@ -130,7 +127,7 @@ class RoiSet:
         }
 
 
-def init_reference(frame, name: str = "roi") -> RoiTracker | None:
+def init_reference(frame, ref_center, name="roi", allowlist=None) -> RoiTracker | None:
     win = f"Select ROI [{name}]"
     cv2.namedWindow(win, cv2.WINDOW_NORMAL)
     cv2.imshow(win, frame)
@@ -145,18 +142,10 @@ def init_reference(frame, name: str = "roi") -> RoiTracker | None:
     if w <= 0 or h <= 0:
         return None
 
-    contour = ip.get_main_contour(
-        ip.rgb2bin(frame, low_threshold=c.BINARYSATION_LOW_THRESHOLD)
-    )
-    if contour is None:
-        return None
-    ref_center = cv2.minAreaRect(contour)[0]
 
     a = np.radians(angle_deg)
-    R = np.array([[np.cos(a), -np.sin(a)],
-                  [np.sin(a),  np.cos(a)]], dtype=np.float32)
-    local_tl = np.array([-w / 2, -h / 2], dtype=np.float32)
-    roi_center = np.array([x0, y0], np.float32) - R @ local_tl
+    R = np.array([[np.cos(a), -np.sin(a)], [np.sin(a), np.cos(a)]], np.float32)
+    roi_center = np.array([x0, y0], np.float32) - R @ np.array([-w/2, -h/2], np.float32)
 
     offset = (float(roi_center[0] - ref_center[0]),
               float(roi_center[1] - ref_center[1]))
@@ -164,7 +153,7 @@ def init_reference(frame, name: str = "roi") -> RoiTracker | None:
     return RoiTracker(
         name=name,
         geometry=RoiGeometry(offset=offset, w=float(w), h=float(h), angle=float(angle_deg)),
-        reference=Reference(frame.copy(), ref_center),
+        allowlist=allowlist,
     )
 
 '''

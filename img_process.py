@@ -14,6 +14,14 @@ class FrameContext:
     main_contour: np.ndarray | None = None
     center: tuple | None = None
 
+'''
+Reference image, center is a center of biggest contour
+'''
+@dataclass
+class Reference:
+    image: np.ndarray
+    center: tuple
+
 
 def build_context(frame, low_threshold=c.BINARYSATION_LOW_THRESHOLD):
     bin_img = rgb2bin(frame, low_threshold)
