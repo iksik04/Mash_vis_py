@@ -5,7 +5,9 @@ import ocr
 import img_process as ip
 
 import constants as c
-import roi as roi
+import roi
+import process
+
 
 
 def test1():
@@ -60,13 +62,13 @@ def test2():
 
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
-        print("Cam not found")
+        print("--ERR: Cam not found")
         exit()
 
     while True:
         ret, frame = cap.read()
         if not ret:
-            print("Can not get picture")
+            print("--ERR: Can not get picture")
             break
 
         gray_img = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -104,7 +106,7 @@ def test3():
     while True:
         ret, frame = cap.read()
         if not ret:
-            print("Can not get picture")
+            print("--ERR: Can not get picture")
             break
 
         ctx = ip.build_context(frame)
@@ -116,6 +118,7 @@ def test3():
 
         key = cv2.waitKey(1) & 0xFF
         if key == ord('q'):
+            print("--MES: Program finished")
             break
         elif key == ord('r'):
             tr = roi.init_reference(frame, name=f"roi_{len(trackers)}")
@@ -134,7 +137,7 @@ def test4():
 
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
-        print("Cam not found")
+        print("--ERR: Cam not found")
         return
 
     trackers = roi.RoiSet()
@@ -154,6 +157,7 @@ def test4():
 
         key = cv2.waitKey(1) & 0xFF
         if key == ord('q'):
+            print("--MES: Program finished")
             break
         elif key == ord('r'):
             cv2.destroyWindow("Test")
@@ -185,9 +189,44 @@ def test4():
     cap.release()
     cv2.destroyAllWindows()
 
+def test5():
+    window_name = "Test"
+    cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+    
+    cap = cv2.VideoCapture(0)
+    if not cap.isOpened():
+        print("--ERR: Cam not found")
+        return
+    
+    trackers = roi.RoiSet()
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            print("--ERR: Can not get picture")
+            break
+
+        canvas = ip.render_img(frame)
+        cv2.imshow(window_name, canvas)
+
+        key = cv2.waitKey(1) & 0xFF
+        if key == ord('q'):
+            print("--MES: Program finished")
+            break
+        elif key == ord('r'):
+            cv2.destroyWindow(window_name)
+            process.ref_init(frame, trackers, save2file = True)
+            cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+            cv2.waitKey(1)
+
+
+    print(trackers)
+    cap.release()
+    cv2.destroyAllWindows()
+
 
 def main():
-    test4()
+    test5()
 
 if __name__ == "__main__":
     main()

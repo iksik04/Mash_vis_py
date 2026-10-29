@@ -129,31 +129,7 @@ class RoiSet:
             for name, t in self.trackers.items()
         }
 
-'''
-init ref ROI (select on the image)
-'''
-'''def init_reference(frame, name: str = "roi") -> RoiTracker | None:
-    x0, y0, w, h = cv2.selectROI("Select ROI", frame, True, False)
-    cv2.destroyWindow("Select ROI")
-    if w <= 0 or h <= 0:
-        return None
 
-    contour = ip.get_main_contour(
-        ip.rgb2bin(frame, low_threshold=c.BINARYSATION_LOW_THRESHOLD)
-    )
-    if contour is None:
-        return None
-
-    ref_center = cv2.minAreaRect(contour)[0]
-    roi_cx, roi_cy = x0 + w / 2, y0 + h / 2
-
-    return RoiTracker(
-        name=name,
-        geometry=RoiGeometry(
-            offset=(roi_cx - ref_center[0], roi_cy - ref_center[1]),
-            w=float(w), h=float(h)),
-        reference=Reference(frame.copy(), ref_center),
-    )'''
 def init_reference(frame, name: str = "roi") -> RoiTracker | None:
     win = f"Select ROI [{name}]"
     cv2.namedWindow(win, cv2.WINDOW_NORMAL)
