@@ -11,7 +11,7 @@ def _extract_main_contour(bgr_img, low_threshold, min_length):
         gray_img = bgr_img
     else: 
         gray_img = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2GRAY)
-        
+
     _, bin_img = cv2.threshold(gray_img, low_threshold, 255, cv2.THRESH_BINARY)
 
     contours, _ = cv2.findContours(bin_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -46,7 +46,7 @@ keeps info about reference image
 class RefImgContext:
     bgr_img: np.ndarray
     ref_low_threshold: int
-    min_ext_contour_length: float
+    min_ext_contour_length: float 
 
     bin_img: np.ndarray | None = None
     ext_contour: np.ndarray | None = None
