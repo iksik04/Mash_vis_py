@@ -45,13 +45,13 @@ Ref_img_context.json
   "reference_contour": [...],           //массив точек найденного контура, ref_ext_contour
   "binarization_params": {
         "reference_low_threshold": int  //BINARYSATION_LOW_THRESHOLD для получения ref_bin_img
-        "reference_high_threshold": int //BINARYSATION_HIGH_THRESHOLD для получения ref_bin_img
+        "reference_high_threshold": int //BINARYSATION_HIGH_THRES HOLD для получения ref_bin_img
     }
 }
 
 ROI.json
 {
-    "init_frame": "ref.jpg",   //исходное brg изображение, захваченное камерой, ref_img
+    "init_frame": "Ref_img_context.json",   //исходное brg изображение, захваченное камерой, ref_img
     "roi_0": {
       "name": "roi_0",         //roi_name
       "offset": [10.0, -20.0], //смещение roi относительно [rcx, rcy], [roi_offcet_x, roi_offcet_y]

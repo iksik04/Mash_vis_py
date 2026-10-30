@@ -12,11 +12,7 @@ def test1():
     ref.build_ref_context()
 
     js.save_ref_context(ref, output_dir=c.presets_path)
-    read_ref = js.read_ref_context(json_path="presets/ref_contexts/Ref_img_context.json")
-
-    print(ref)
-
-    print(read_ref)
+    # read_ref = js.read_ref_context(json_path="presets/ref_contexts/Ref_img_context.json")
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
