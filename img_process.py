@@ -2,6 +2,43 @@ import cv2
 import numpy as np
 from dataclasses import dataclass
 
+"""
+Binarize the image, find external contours, filter by arc length,
+and return (bin_img, ext_contour, center) of the longest contour.
+"""
+def _extract_main_contour(bgr_img, low_threshold, min_length):
+    if bgr_img.ndim == 2:
+        gray_img = bgr_img
+    else: 
+        gray_img = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2GRAY)
+        
+    _, bin_img = cv2.threshold(gray_img, low_threshold, 255, cv2.THRESH_BINARY)
+
+    contours, _ = cv2.findContours(bin_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    filtered_contours = [
+        cnt for cnt in contours
+        if cv2.arcLength(cnt, True) >= min_length
+    ]
+    if not filtered_contours:
+        raise ValueError("--ERR: _extract_main_contour no contours found")
+
+    ext_contour = max(filtered_contours, key=lambda c: cv2.arcLength(c, True))
+    center = cv2.minAreaRect(ext_contour)[0]
+    return bin_img, ext_contour, center
+
+"""
+Normalize an angle into the (-180, 180] range. NaN is passed through unchanged.
+"""
+def _normalize_angle(angle):
+    if np.isnan(angle):
+        return angle
+    while angle <= -180:
+        angle += 360
+    while angle > 180:
+        angle -= 360
+    return angle
+
+
 '''
 keeps info about reference image
 '''
@@ -16,22 +53,9 @@ class RefImgContext:
     center: tuple | None = None
 
     def build_ref_context(self):
-        gray_img = cv2.cvtColor(self.bgr_img, cv2.COLOR_BGR2GRAY)
-        _, self.bin_img  = cv2.threshold(gray_img,
-                                    self.ref_low_threshold,
-                                    255,
-                                    cv2.THRESH_BINARY)
-        contours, _ = cv2.findContours(self.bin_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        filtered_contours = []
-        for cnt in contours:
-            length = cv2.arcLength(cnt, True)
-            if length >= self.min_ext_contour_length:
-                filtered_contours.append(cnt)
-        if len(filtered_contours) == 0:
-            raise ValueError("--ERR: RefImgContext.build_ref_context no contours found")
-        else:
-            self.ext_contour = max(filtered_contours, key=lambda c: cv2.arcLength(c, True))
-            self.center = cv2.minAreaRect(self.ext_contour)[0]
+        self.bin_img, self.ext_contour, self.center = _extract_main_contour(
+            self.bgr_img, self.ref_low_threshold, self.min_ext_contour_length
+        )
 
     def __repr__(self) -> str:
         def arr_info(a):
@@ -52,7 +76,6 @@ class RefImgContext:
         )
 
 
-    
 '''
 keeps info about current image
 '''
@@ -71,31 +94,14 @@ class CurImgContext:
     center: tuple | None = None
 
     def build_cur_context(self):
-        gray_img = cv2.cvtColor(self.bgr_img, cv2.COLOR_BGR2GRAY)
-        _, self.bin_img  = cv2.threshold(gray_img,
-                                    self.ref_low_threshold,
-                                    255,
-                                    cv2.THRESH_BINARY)
-        contours, _ = cv2.findContours(self.bin_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        filtered_contours = []
-        for cnt in contours:
-            length = cv2.arcLength(cnt, True)
-            if length >= self.min_ext_contour_length:
-                filtered_contours.append(cnt)
-        if len(filtered_contours) == 0:
-            raise ValueError("--ERR: RefImgContext.build_ref_context no contours found")
-        else:
-            self.ext_contour = max(filtered_contours, key=lambda c: cv2.arcLength(c, True))
-            self.center = cv2.minAreaRect(self.ext_contour)[0]
+        self.bin_img, self.ext_contour, self.center = _extract_main_contour(
+            self.bgr_img, self.ref_low_threshold, self.min_ext_contour_length
+        )
 
         if self.reference is not None:
-            self.delta_angle = get_angle(self.reference.bgr_img, self.bgr_img)
-            if not np.isnan(self.delta_angle):
-                while self.delta_angle <= -180:
-                    self.delta_angle += 360
-                while self.delta_angle > 180:
-                    self.delta_angle -= 360
-
+            self.delta_angle = _normalize_angle(
+                get_angle(self.reference.bgr_img, self.bgr_img)
+            )
 
     def __repr__(self) -> str:
         def arr_info(a):
@@ -117,6 +123,7 @@ class CurImgContext:
             f"  delta_angle        = {self.delta_angle},\n"
             f")"
         )
+
 
 def get_angle(img1, img2):
     orb = cv2.ORB_create()
