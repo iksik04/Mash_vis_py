@@ -18,11 +18,8 @@ class SingleROI:
     rotation_angle: float = 0.0
     OCR_allowlist: str = ""
 
-    def _rotation_matrix(self, angle_deg):
-        return rot_matrix_deg(angle_deg)
-
     def roi_center_at(self, ref_center, delta_angle=0.0):
-        R = self._rotation_matrix(delta_angle)
+        R = rot_matrix_deg(delta_angle)
         return np.asarray(ref_center, np.float32) + R @ np.asarray(self.offset, np.float32)
 
     def corners_at(self, ref_center, delta_angle=0.0):

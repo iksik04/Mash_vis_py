@@ -15,7 +15,7 @@ def grab_frame(cam_index: int = 0):
         if ok and frame is not None:
             return frame
     if frame is None:
-        raise IOError("Не удалось получить кадр ни с камеры, ни из файла")
+        raise IOError("--ERR: grab_frame can not get frame")
     return frame
 
 

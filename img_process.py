@@ -2,6 +2,8 @@ import cv2
 import numpy as np
 from dataclasses import dataclass
 
+import geometry
+
 """
 Binarize the image, find external contours, filter by arc length,
 and return (bin_img, ext_contour, center) of the longest contour.
@@ -26,17 +28,10 @@ def _extract_main_contour(bgr_img, low_threshold, min_length):
     center = cv2.minAreaRect(ext_contour)[0]
     return bin_img, ext_contour, center
 
-"""
-Normalize an angle into the (-180, 180] range. NaN is passed through unchanged.
-"""
-def _normalize_angle(angle):
-    if np.isnan(angle):
-        return angle
-    while angle <= -180:
-        angle += 360
-    while angle > 180:
-        angle -= 360
-    return angle
+def _arr_info(a):
+    return "None" if a is None else f"ndarray(shape={a.shape}, dtype={a.dtype})"
+def _contour_info(c):
+    return "None" if c is None else f"contour(points={len(c)}, shape={c.shape})"
 
 
 '''
@@ -58,17 +53,11 @@ class RefImgContext:
         )
 
     def __repr__(self) -> str:
-        def arr_info(a):
-            return "None" if a is None else f"ndarray(shape={a.shape}, dtype={a.dtype})"
-
-        def contour_info(c):
-            return "None" if c is None else f"contour(points={len(c)}, shape={c.shape})"
-
         return (
             f"{type(self).__name__}(\n"
-            f"  bgr_img            = {arr_info(self.bgr_img)},\n"
-            f"  bin_img            = {arr_info(self.bin_img)},\n"
-            f"  ext_contour        = {contour_info(self.ext_contour)},\n"
+            f"  bgr_img            = {_arr_info(self.bgr_img)},\n"
+            f"  bin_img            = {_arr_info(self.bin_img)},\n"
+            f"  ext_contour        = {_contour_info(self.ext_contour)},\n"
             f"  center             = {self.center},\n"
             f"  ref_low_threshold  = {self.ref_low_threshold},\n"
             f"  min_ext_contour_length = {self.min_ext_contour_length},\n"
@@ -99,24 +88,18 @@ class CurImgContext:
         )
 
         if self.reference is not None:
-            self.delta_angle = _normalize_angle(
+            self.delta_angle = geometry.normalize_angle_deg(
                 get_angle(self.reference.bgr_img, self.bgr_img)
             )
 
     def __repr__(self) -> str:
-        def arr_info(a):
-            return "None" if a is None else f"ndarray(shape={a.shape}, dtype={a.dtype})"
-
-        def contour_info(c):
-            return "None" if c is None else f"contour(points={len(c)}, shape={c.shape})"
-
         ref_info = "None" if self.reference is None else type(self.reference).__name__
         return (
             f"{type(self).__name__}(\n"
             f"  reference          = {ref_info},\n"
-            f"  bgr_img            = {arr_info(self.bgr_img)},\n"
-            f"  bin_img            = {arr_info(self.bin_img)},\n"
-            f"  ext_contour        = {contour_info(self.ext_contour)},\n"
+            f"  bgr_img            = {_arr_info(self.bgr_img)},\n"
+            f"  bin_img            = {_arr_info(self.bin_img)},\n"
+            f"  ext_contour        = {_contour_info(self.ext_contour)},\n"
             f"  center             = {self.center},\n"
             f"  ref_low_threshold  = {self.ref_low_threshold},\n"
             f"  min_ext_contour_length = {self.min_ext_contour_length},\n"
