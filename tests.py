@@ -3,7 +3,7 @@ import cv2
 import constants as c
 import img_process as ip
 import json_process as js
-from roi import MultiROI
+import roi as r
 import roi_selector as roi_sel
 
 def grab_frame(cam_index: int = 0):
@@ -29,9 +29,12 @@ def test1():
         min_ext_contour_length=c.MIN_EXT_CONTOUR_LENGTH,
     )
     reference.build_ref_context()
+
+    js.save_ref_context(reference, output_dir="presets/ref_contexts")
+
     print("reference center:", reference.center)
 
-    multi = MultiROI(reference=reference)
+    multi_roi = r.MultiROI(reference=reference)
     window_name = "Select ROI"
     cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
 
@@ -49,20 +52,19 @@ def test1():
             )
             if roi is None:
                 break
-            multi.add(roi)
+            multi_roi.add(roi)
             idx += 1
-            print(f"Added {roi.name}: offset={roi.offset}, "
-                  f"w={roi.width:.1f}, h={roi.height:.1f}, "
-                  f"angle={roi.rotation_angle:.2f}")
-
-            ans = input("Добавить ещё ROI? [Y=да / N=нет]: ").strip().lower()
-            if ans == "n":
-                break
     finally:
         cv2.destroyWindow(window_name)
+        js.save_MultiROI(
+            multi_roi,
+            reference_context_path="presets/ref_contexts/Ref_img_context.json",
+            output_dir="presets/ref_ROIs",
+            json_name="MultiROI_context.json",
+        )
 
-    out_windows = []
-    for name, roi in multi.rois.items():
+    '''out_windows = []
+    for name, roi in multi_roi.rois.items():
         patch = roi.extract(frame, ref_center=reference.center, delta_angle=0.0)
         if patch is None or patch.size == 0:
             print(f"--WARN: не удалось извлечь {name}")
@@ -70,9 +72,47 @@ def test1():
         win = f"ROI: {name}"
         out_windows.append(win)
         cv2.namedWindow(win, cv2.WINDOW_NORMAL)
-        cv2.imshow(win, patch) 
+        cv2.imshow(win, patch)'''
     cv2.waitKey(0)
+
+def test2():
+    frame = grab_frame()
+    
+    ref_multi_roi = js.read_MultiROI("presets/ref_ROIs/MultiROI_context.json")
+
+    cur = ip.CurImgContext(bgr_img=frame,
+                           ref_low_threshold=c.BINARYSATION_LOW_THRESHOLD, 
+                           min_ext_contour_length=c.MIN_EXT_CONTOUR_LENGTH)
+    cur.reference = ref_multi_roi.reference
+    cur.build_cur_context()
+
+    #vis = frame.copy()
+    #img_rois = []
+    for name, roi in ref_multi_roi.rois.items():
+        corners, roi_center, _ = roi.corners_at(
+            ref_center=cur.center,
+            delta_angle=cur.delta_angle,
+        )
+        # render all ROIs on the image
+        '''vis = r.render_rois(frame=vis, 
+                            roi_center=roi_center, 
+                            roi_corners=corners, 
+                            name=name)'''
+        # save ROIs into img_rois list
+        '''img_rois.append(roi.extract(frame=frame,
+                                    ref_center=cur.center, 
+                                    delta_angle=cur.delta_angle))'''
+
+
+
+    #cv2.namedWindow("ROI on current frame", cv2.WINDOW_NORMAL)
+    #cv2.imshow("ROI on current frame", vis)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+
+
 
 
 if __name__ == "__main__":
-    test1()
+    test2()

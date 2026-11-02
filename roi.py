@@ -3,8 +3,9 @@ from dataclasses import dataclass, field
 import numpy as np
 import cv2
 
-from geometry import rot_matrix_deg, rect_corners, side_midpoints
+from geometry import rot_matrix_deg, rect_corners
 from img_process import RefImgContext
+import constants as c
 
 
 @dataclass
@@ -56,7 +57,6 @@ class MultiROI:
 
     reference: RefImgContext
     rois: dict = field(default_factory=dict)
-    last_angle: float = None
 
     def add(self, roi, replace=False):
         if not replace and roi.name in self.rois:
@@ -68,3 +68,13 @@ class MultiROI:
 
     def get(self, name):
         return self.rois.get(name)
+
+def render_rois(frame, roi_center, roi_corners, name, width=c.ROI_LINE_WIDTH, color=c.BLUE):
+    cv2.polylines(frame, [roi_corners.reshape(-1, 1, 2)], True,
+                  color, width)
+    cv2.drawMarker(frame, tuple(map(int, roi_center)),
+                   color, cv2.MARKER_CROSS, 12, width)
+    cv2.putText(frame, name, tuple(map(int, roi_corners[0])),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.6, c.GREEN, 2, cv2.LINE_AA)
+    return frame
+    

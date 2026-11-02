@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 
 from img_process import RefImgContext
+from roi import MultiROI, SingleROI
 
 
 """
@@ -142,3 +143,158 @@ def read_ref_context(json_path: str, expected_version: int = 1) -> "RefImgContex
     )
 
     return ref_ctx
+
+"""
+Save a MultiROI instance to a JSON file.
+
+The JSON file contains:
+  - version               : format version
+  - reference_context_file: path to the RefImgContext JSON file
+                            (stored relative to the MultiROI JSON dir)
+  - rois                  : list of ROI dicts, each with
+        name, offset, width, height, rotation_angle, OCR_allowlist
+
+The reference context JSON file itself is NOT written here; it must
+already exist (produced by `save_ref_context`). Its path is stored in a
+portable form: if it lies under `output_dir`, it is saved as a path
+relative to the MultiROI JSON file; otherwise the absolute path is kept.
+
+Returns the full path to the created JSON file.
+"""
+def save_MultiROI(multi_roi: "MultiROI",
+                  reference_context_path: str,
+                  output_dir: str = ".",
+                  json_name: str = "MultiROI_context.json",
+                  version: int = 1) -> str:
+
+    if multi_roi is None:
+        raise ValueError("--ERR: save_MultiROI multi_roi is None")
+    if not isinstance(reference_context_path, str):
+        raise ValueError("--ERR: save_MultiROI reference_context_path must be a str")
+    if not os.path.isfile(reference_context_path):
+        raise FileNotFoundError(
+            f"--ERR: save_MultiROI reference context file not found: "
+            f"{reference_context_path}"
+        )
+
+    os.makedirs(output_dir, exist_ok=True)
+    json_path = os.path.join(output_dir, json_name)
+
+    # Store the reference context path in a portable form:
+    # relative to the MultiROI JSON directory when possible.
+    ref_ctx_abs = os.path.abspath(reference_context_path)
+    base_dir = os.path.abspath(output_dir)
+    try:
+        ref_ctx_rel = os.path.relpath(ref_ctx_abs, base_dir)
+    except ValueError:
+        # Different drives on Windows — fall back to absolute.
+        ref_ctx_rel = ref_ctx_abs
+
+    # Serialize ROIs
+    rois_data = []
+    for name, roi in multi_roi.rois.items():
+        rois_data.append({
+            "name": roi.name,
+            "offset": [float(roi.offset[0]), float(roi.offset[1])],
+            "width": float(roi.width),
+            "height": float(roi.height),
+            "rotation_angle": float(roi.rotation_angle),
+            "OCR_allowlist": str(roi.OCR_allowlist),
+        })
+
+    data = {
+        "version": version,
+        "reference_context_file": ref_ctx_rel,
+        "rois": rois_data,
+    }
+
+    with open(json_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+    return json_path
+
+
+"""
+Read a MultiROI instance from a JSON file.
+
+The JSON file is expected to be in the format produced by
+`save_MultiROI` and to contain:
+  - version               : format version (must match the expected one)
+  - reference_context_file: path to the RefImgContext JSON file
+                            (relative to the MultiROI JSON dir or absolute)
+  - rois                  : list of ROI dicts
+
+The reference context is loaded via `read_ref_context` and attached to
+the returned MultiROI instance.
+
+Returns the filled MultiROI instance.
+"""
+def read_MultiROI(json_path: str, expected_version: int = 1) -> "MultiROI":
+    if not os.path.isfile(json_path):
+        raise FileNotFoundError(f"--ERR: read_MultiROI JSON not found: {json_path}")
+
+    with open(json_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    # --- version check ---
+    file_version = data.get("version")
+    if file_version is None:
+        raise ValueError("--ERR: read_MultiROI JSON has no 'version' field")
+    if int(file_version) != int(expected_version):
+        raise ValueError(
+            f"--ERR: read_MultiROI version mismatch: "
+            f"file={file_version}, expected={expected_version}"
+        )
+
+    # --- required fields check ---
+    for key in ("reference_context_file", "rois"):
+        if key not in data:
+            raise ValueError(f"--ERR: read_MultiROI missing field: '{key}'")
+
+    # --- resolve the reference context path relative to the JSON file ---
+    base_dir = os.path.dirname(os.path.abspath(json_path))
+    ref_ctx_path = data["reference_context_file"]
+    if not os.path.isabs(ref_ctx_path):
+        ref_ctx_path = os.path.join(base_dir, ref_ctx_path)
+    ref_ctx_path = os.path.normpath(ref_ctx_path)
+
+    if not os.path.isfile(ref_ctx_path):
+        raise FileNotFoundError(
+            f"--ERR: read_MultiROI reference context file not found: {ref_ctx_path}"
+        )
+
+    # --- load the reference context ---
+    reference = read_ref_context(ref_ctx_path, expected_version=expected_version)
+
+    # --- restore ROIs ---
+    rois_data = data["rois"]
+    if not isinstance(rois_data, list):
+        raise ValueError("--ERR: read_MultiROI 'rois' must be a list")
+
+    multi = MultiROI(reference=reference)
+
+    for i, r in enumerate(rois_data):
+        for key in ("name", "offset", "width", "height",
+                    "rotation_angle", "OCR_allowlist"):
+            if key not in r:
+                raise ValueError(
+                    f"--ERR: read_MultiROI roi[{i}] missing field: '{key}'"
+                )
+
+        offset = r["offset"]
+        if (not isinstance(offset, (list, tuple)) or len(offset) != 2):
+            raise ValueError(
+                f"--ERR: read_MultiROI roi[{i}] 'offset' must be [x, y]"
+            )
+
+        roi = SingleROI(
+            name=str(r["name"]),
+            offset=(float(offset[0]), float(offset[1])),
+            width=float(r["width"]),
+            height=float(r["height"]),
+            rotation_angle=float(r["rotation_angle"]),
+            OCR_allowlist=str(r["OCR_allowlist"]),
+        )
+        multi.add(roi)  # raises KeyError on duplicate names
+
+    return multi
