@@ -78,35 +78,33 @@ def test1():
 def test2():
     frame = grab_frame()
     
-    ref_multi_roi = js.read_MultiROI("presets/ref_ROIs/MultiROI_context.json")
+    multi_roi = js.read_MultiROI("presets/ref_ROIs/MultiROI_context.json")
 
     cur = ip.CurImgContext(bgr_img=frame,
                            ref_low_threshold=c.BINARYSATION_LOW_THRESHOLD, 
                            min_ext_contour_length=c.MIN_EXT_CONTOUR_LENGTH)
-    cur.reference = ref_multi_roi.reference
+    cur.reference = multi_roi.reference
     cur.build_cur_context()
 
-    #vis = frame.copy()
-    #img_rois = []
-    for name, roi in ref_multi_roi.rois.items():
-        corners, roi_center, _ = roi.corners_at(
-            ref_center=cur.center,
-            delta_angle=cur.delta_angle,
-        )
-        # render all ROIs on the image
-        '''vis = r.render_rois(frame=vis, 
-                            roi_center=roi_center, 
-                            roi_corners=corners, 
-                            name=name)'''
-        # save ROIs into img_rois list
-        '''img_rois.append(roi.extract(frame=frame,
-                                    ref_center=cur.center, 
-                                    delta_angle=cur.delta_angle))'''
+    vis = multi_roi.render_all(frame=frame, 
+                               ref_center=cur.center, 
+                               delta_angle=cur.delta_angle)
+    
+    img_rois = multi_roi.extract_all(frame=frame, 
+                                     ref_center=cur.center, 
+                                     delta_angle=cur.delta_angle)
+    
+    for name, patch in img_rois.items():
+        if patch is None:
+            continue 
+        win = f"ROI {name}"
+        cv2.namedWindow(win, cv2.WINDOW_NORMAL)
+        cv2.imshow(win, patch)
 
 
 
-    #cv2.namedWindow("ROI on current frame", cv2.WINDOW_NORMAL)
-    #cv2.imshow("ROI on current frame", vis)
+    cv2.namedWindow("ROI on current frame", cv2.WINDOW_NORMAL)
+    cv2.imshow("ROI on current frame", vis)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 

@@ -47,6 +47,22 @@ class SingleROI:
                              flags=cv2.INTER_CUBIC,
                              borderMode=cv2.BORDER_REPLICATE)
         return roi if roi.size > 0 else None
+    
+    def render(self, frame, ref_center, delta_angle=0.0,
+               name=None, color=c.BLUE, width=c.ROI_LINE_WIDTH):
+        if frame is None:
+            return None
+
+        corners, roi_center, _ = self.corners_at(ref_center, delta_angle)
+        label = self.name if name is None else name
+
+        vis = frame.copy()
+        cv2.polylines(vis, [corners.reshape(-1, 1, 2)], True, color, width)
+        cv2.drawMarker(vis, tuple(map(int, roi_center)),
+                       color, cv2.MARKER_CROSS, 12, width)
+        cv2.putText(vis, label, tuple(map(int, corners[0])),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, c.GREEN, 2, cv2.LINE_AA)
+        return vis
 
 
 @dataclass
@@ -66,12 +82,59 @@ class MultiROI:
     def get(self, name):
         return self.rois.get(name)
 
-def render_rois(frame, roi_center, roi_corners, name, width=c.ROI_LINE_WIDTH, color=c.BLUE):
-    cv2.polylines(frame, [roi_corners.reshape(-1, 1, 2)], True,
-                  color, width)
-    cv2.drawMarker(frame, tuple(map(int, roi_center)),
-                   color, cv2.MARKER_CROSS, 12, width)
-    cv2.putText(frame, name, tuple(map(int, roi_corners[0])),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.6, c.GREEN, 2, cv2.LINE_AA)
-    return frame
+    # -----------------------------------------------------------------------
+    # Bulk operations
+    # -----------------------------------------------------------------------
+    """
+    Draw every ROI of this container on a copy of `frame`.
+
+    See `SingleROI.render` for the meaning of `ref_center`, `delta_angle`,
+    `color` and `width`. Each ROI is drawn with its own name label.
+
+    Returns
+    -------
+    np.ndarray | None
+        The annotated copy of `frame`, or None if `frame` is None.
+    """
+    def render_all(self, frame, ref_center, delta_angle=0.0,
+                   color=c.BLUE, width=c.ROI_LINE_WIDTH):
+        if frame is None:
+            return None
+        vis = frame.copy()
+        for roi in self.rois.values():
+            vis = roi.render(vis, ref_center=ref_center,
+                             delta_angle=delta_angle,
+                             color=color, width=width)
+        return vis
+
+    """
+    Extract every ROI of this container from `frame`.
+
+    Parameters
+    ----------
+    frame : np.ndarray
+        Frame to extract from.
+    ref_center : (cx, cy)
+        Reference-image center (usually `reference.center` or
+        `cur_context.center`).
+    delta_angle : float
+        Rotation of the current frame relative to the reference, degrees.
+
+    Returns
+    -------
+    dict[str, np.ndarray | None]
+        Mapping name -> patch. ROI for which extraction failed
+        (None / empty array) are present with value None and a warning
+        is printed to stderr.
+    """
+    def extract_all(self, frame, ref_center, delta_angle=0.0):
+        result = {}
+        for name, roi in self.rois.items():
+            patch = roi.extract(frame, ref_center=ref_center, delta_angle=delta_angle)
+            if patch is None or patch.size == 0:
+                print(f"--WARN: MultiROI.extract_all failed to extract '{name}'")
+                result[name] = None
+            else:
+                result[name] = patch
+        return result
     
