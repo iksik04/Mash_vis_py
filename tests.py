@@ -10,6 +10,8 @@ def grab_frame(cam_index: int = 0):
     cap = cv2.VideoCapture(cam_index)
     frame = None
     if cap.isOpened():
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
         ok, frame = cap.read()
         cap.release()
         if ok and frame is not None:
@@ -36,7 +38,7 @@ def test1():
 
     multi_roi = r.MultiROI(reference=reference)
     window_name = "Select ROI"
-    cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+    cv2.namedWindow(window_name, cv2.WINDOW_AUTOSIZE)
 
     idx = 0
     try:
@@ -98,15 +100,44 @@ def test2():
         if patch is None:
             continue 
         win = f"ROI {name}"
-        cv2.namedWindow(win, cv2.WINDOW_NORMAL)
+        cv2.namedWindow(win, cv2.WINDOW_AUTOSIZE)
         cv2.imshow(win, patch)
 
 
 
-    cv2.namedWindow("ROI on current frame", cv2.WINDOW_NORMAL)
+    cv2.namedWindow("ROI on current frame", cv2.WINDOW_AUTOSIZE)
     cv2.imshow("ROI on current frame", vis)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
+
+def test3():
+    windowName = "Test"
+    cv2.namedWindow(windowName, cv2.WINDOW_AUTOSIZE)
+
+    cap = cv2.VideoCapture(0)
+    if not cap.isOpened():
+        print("--ERR: Can not open cam 0")
+        exit()
+
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            print("--ERR: Can not get picture")
+            break
+
+        cv2.imshow(windowName, frame)
+
+        key = cv2.waitKey(1) & 0xFF
+        if key == ord('q'):
+            print("--MES: Program finished")
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
+    
 
 
 
