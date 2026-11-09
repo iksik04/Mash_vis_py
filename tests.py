@@ -4,142 +4,12 @@ import numpy as np
 import constants as c
 import img_process as ip
 import json_process as js
-import roi as r
-import roi_selector as roi_sel
-
-def grab_frame(cam_index: int = 0):
-    cap = cv2.VideoCapture(cam_index)
-    frame = None
-    if cap.isOpened():
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
-        ok, frame = cap.read()
-        cap.release()
-        if ok and frame is not None:
-            return frame
-    if frame is None:
-        raise IOError("--ERR: grab_frame can not get frame")
-    return frame
+import process as p
 
 
-def setBinThereshold():
-    windowName = "Select binaryzation thereshold"
-    cv2.namedWindow(windowName, cv2.WINDOW_AUTOSIZE)
-    cv2.createTrackbar("Binaryzation thereshold",  windowName, 160, 255, lambda x: None)
 
-    cap = cv2.VideoCapture(0)
-    if not cap.isOpened():
-        print("--ERR: Can not open cam 0")
-        exit()
-    
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
-    
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            print("--ERR: Can not get picture")
-            break
-
-        gray_img = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        low_threshold = cv2.getTrackbarPos("Binaryzation thereshold", windowName)
-        _, bin_img = cv2.threshold(gray_img, low_threshold, 255, cv2.THRESH_BINARY)
-        cv2.imshow(windowName, bin_img)
-    
-        key = cv2.waitKey(1) & 0xFF
-        if key == ord('q'):
-            print("--MES: Program finished")
-            break
-    
-    cap.release()
-    cv2.destroyAllWindows()
-
-def setRefContext():
-    selectBinThereshWindowName = "Select binaryzation thereshold"
-    cv2.namedWindow(selectBinThereshWindowName, cv2.WINDOW_AUTOSIZE)
-    cv2.createTrackbar("Binaryzation thereshold",  selectBinThereshWindowName, 127, 255, lambda x: None)
-    bin_threshold_set = False
-    select_ROI = False
-
-    cap = cv2.VideoCapture(0)
-    if not cap.isOpened():
-        print("--ERR: Can not open cam 0")
-        exit()
-    
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
-
-    print("--MES: Select binaryzation thereshold; press 'n' key if selected")
-
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            print("--ERR: Can not get picture")
-            break
-
-        if not bin_threshold_set:
-            bin_threshold = cv2.getTrackbarPos("Binaryzation thereshold", selectBinThereshWindowName)
-            bin_img, ext_contour, _ = ip.extract_main_contour(frame, bin_threshold, c.MIN_EXT_CONTOUR_LENGTH)
-            canvas = ip.render_img(image=bin_img, contour=ext_contour, center=True)
-            cv2.imshow(selectBinThereshWindowName, canvas)
-
-        key = cv2.waitKey(1) & 0xFF
-        if key == ord('n'):
-            print(f"--MES: Selected {bin_threshold} binaryzation thereshold")
-            bin_threshold_set = True
-            select_ROI = True
-            cv2.destroyWindow(selectBinThereshWindowName)
-            break
-        elif key == ord('q'):
-            cv2.destroyAllWindows()
-            print("--MES: Program finished")
-            break
-
-    if select_ROI:
-            reference = ip.RefImgContext(
-                bgr_img=frame,
-                ref_low_threshold=bin_threshold,
-                min_ext_contour_length=c.MIN_EXT_CONTOUR_LENGTH,
-            )
-            reference.build_ref_context()
-
-            js.save_ref_context(reference, output_dir="presets/ref_contexts")
-
-            multi_roi = r.MultiROI(reference=reference)
-            selectROIWindowName = "Select ROI"
-            cv2.namedWindow(selectROIWindowName, cv2.WINDOW_AUTOSIZE)
-
-            idx = 0
-            try:
-                while True:
-                    roi = roi_sel.select_single_roi(
-                        window_name=selectROIWindowName,
-                        frame=frame,
-                        reference=reference,
-                        name=f"roi_{idx}",
-                        delta_angle_deg=0.0,
-                        initial=None,
-                        ocr_allowlist="",
-                    )
-                    if roi is None:
-                        break
-                    multi_roi.add(roi)
-                    idx += 1
-            finally:
-                cv2.destroyWindow(selectROIWindowName)
-                js.save_MultiROI(
-                    multi_roi,
-                    reference_context_path="presets/ref_contexts/Ref_img_context.json",
-                    output_dir="presets/ref_ROIs",
-                    json_name="MultiROI_context.json",
-                )
-
-def test2():
-    frame = grab_frame()
-    kernel = np.array([[ 0, -1,  0],
-                   [-1,  5, -1],
-                   [ 0, -1,  0]], np.float32)
-    sharpened = cv2.filter2D(frame, -1, kernel)
+def test1():
+    frame = p.grab_frame()
     
     multi_roi = js.read_MultiROI("presets/ref_ROIs/MultiROI_context.json")
 
@@ -165,7 +35,8 @@ def test2():
             continue 
         win = f"ROI {name}"
         cv2.namedWindow(win, cv2.WINDOW_AUTOSIZE)
-        cv2.createTrackbar("Thresh low",  f"ROI {name}", 160, 255, lambda x: None)
+        cv2.createTrackbar("k",  f"ROI {name}", 5, 10, lambda x: None)
+        cv2.createTrackbar("bin",  f"ROI {name}", 80, 255, lambda x: None)
     
     while True:
 
@@ -173,10 +44,12 @@ def test2():
             win = f"ROI {name}"
             if patch is None:
                 continue 
+            k = cv2.getTrackbarPos("k", f"ROI {name}")
+            bin_thereshold = cv2.getTrackbarPos("bin", f"ROI {name}")
             resized = cv2.resize(patch, None, fx=5, fy=5)
-            gray_img = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
-            low_threshold = cv2.getTrackbarPos("Thresh low", f"ROI {name}")
-            _, bin_img = cv2.threshold(gray_img, low_threshold, 255, cv2.THRESH_BINARY)
+            sharpened = ip.img_sharpen(resized, k=k)
+            gray_img = cv2.cvtColor(sharpened, cv2.COLOR_BGR2GRAY)
+            _, bin_img = cv2.threshold(gray_img, bin_thereshold, 255, cv2.THRESH_BINARY)
             cv2.imshow(win, bin_img)
    
         key = cv2.waitKey(1) & 0xFF
@@ -187,7 +60,10 @@ def test2():
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-def test3():
+'''
+Shows images from cap continiously
+'''
+def test2():
     windowName = "Test"
     cv2.namedWindow(windowName, cv2.WINDOW_AUTOSIZE)
 
@@ -213,15 +89,18 @@ def test3():
 
     cap.release()
     cv2.destroyAllWindows()
-    
-def test4():
+
+'''
+Testing different sharpen filters
+'''
+def test3():
 
     cv2.namedWindow("No filter", cv2.WINDOW_AUTOSIZE)
     cv2.namedWindow("Filtered", cv2.WINDOW_AUTOSIZE)
     cv2.namedWindow("Sharpened", cv2.WINDOW_AUTOSIZE)
     cv2.namedWindow("Sharpened2", cv2.WINDOW_AUTOSIZE)
 
-    frame = grab_frame()    
+    frame = p.grab_frame()    
     enhanced = cv2.detailEnhance(frame, sigma_s=10, sigma_r=0.15)
 
     kernel = np.array([[ 0, -1,  0],
@@ -243,5 +122,4 @@ def test4():
 
 
 if __name__ == "__main__":
-    #setRefContext()
-    test2()
+    test1()

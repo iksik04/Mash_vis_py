@@ -5,30 +5,6 @@ from dataclasses import dataclass
 import geometry
 import constants as c
 
-"""
-Binarize the image, find external contours, filter by arc length,
-and return (bin_img, ext_contour, center) of the longest contour.
-"""
-def extract_main_contour(bgr_img, low_threshold, min_length):
-    if bgr_img.ndim == 2:
-        gray_img = bgr_img
-    else: 
-        gray_img = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2GRAY)
-
-    _, bin_img = cv2.threshold(gray_img, low_threshold, 255, cv2.THRESH_BINARY)
-
-    contours, _ = cv2.findContours(bin_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    filtered_contours = [
-        cnt for cnt in contours
-        if cv2.arcLength(cnt, True) >= min_length
-    ]
-    if not filtered_contours:
-        raise ValueError("--ERR: _extract_main_contour no contours found")
-
-    ext_contour = max(filtered_contours, key=lambda c: cv2.arcLength(c, True))
-    center = cv2.minAreaRect(ext_contour)[0]
-    return bin_img, ext_contour, center
-
 def _arr_info(a):
     return "None" if a is None else f"ndarray(shape={a.shape}, dtype={a.dtype})"
 def _contour_info(c):
@@ -179,3 +155,46 @@ def render_img(image, contour=None, rectangle=False, center=False,
         cv2.line(canvas, (cx, cy - center_size), (cx, cy + center_size),
                  center_color, center_width)
     return canvas
+
+"""
+Binarize the image, find external contours, filter by arc length,
+and return (bin_img, ext_contour, center) of the longest contour.
+"""
+def extract_main_contour(bgr_img, low_threshold, min_length):
+    if bgr_img.ndim == 2:
+        gray_img = bgr_img
+    else: 
+        gray_img = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2GRAY)
+
+    _, bin_img = cv2.threshold(gray_img, low_threshold, 255, cv2.THRESH_BINARY)
+
+    contours, _ = cv2.findContours(bin_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    filtered_contours = [
+        cnt for cnt in contours
+        if cv2.arcLength(cnt, True) >= min_length
+    ]
+    if not filtered_contours:
+        raise ValueError("--ERR: _extract_main_contour no contours found")
+
+    ext_contour = max(filtered_contours, key=lambda c: cv2.arcLength(c, True))
+    center = cv2.minAreaRect(ext_contour)[0]
+    return bin_img, ext_contour, center
+
+def img_sharpen(frame, k):
+
+    sharpened = cv2.detailEnhance(frame, sigma_s=10, sigma_r=0.15)
+
+    
+    kernel = np.array([[ 0, -k,  0],
+                   [-k,  1+4*k, -k],
+                   [ 0, -k,  0]], np.float32)
+
+    
+    '''
+    kernel = np.array([[-k, -k, -k],
+                           [-k,  1+9*k, -k],
+                           [-k, -k, -k]])
+                           '''
+    #sharpened = cv2.filter2D(frame, -1, kernel)
+
+    return sharpened
