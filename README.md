@@ -78,3 +78,7 @@ ROI.json
 В коде должны быть реализованы классы RoiGeometry, FrameContext, RoiTracker, RoiSet
 
 
+
+TODO: разобраться с функцией валидации для cap. Странно ищется контур кругов в ROI
+
+

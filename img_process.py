@@ -115,34 +115,41 @@ def get_angle(img1, img2):
 '''
 renders image. Countur, rectangle and center are optional
 '''
-def render_img(image, contour=None, rectangle=False, center=False,
+def render_img(image, contours=None, rectangle=False, center=False,
              contour_color=c.GREEN, contour_width=c.CONTOUR_LINE_WIDTH,
              rect_color=c.GREEN, rect_width=c.RECT_LINE_WIDTH,
              center_color=c.GREEN, center_size=None, center_width=c.CENTER_LINE_WIDTH
             ):
 
-    if contour is None or len(contour) == 0:
-        contour = None
+    if contours is None:
+        contours = []
+    elif isinstance(contours, np.ndarray):
+        contours = [contours] if contours.ndim in (2, 3) and contours.shape[-1] == 2 else list(contours)
+    else:
+        contours = list(contours)
+
+    if len(contours) == 0:
+        contours = None
 
     if len(image.shape) == 2:
         canvas = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
     else:
         canvas = image.copy()
 
-    if contour is not None:
-        cv2.drawContours(canvas, contour, -1, contour_color, contour_width)
+    if contours is not None:
+        cv2.drawContours(canvas, contours, -1, contour_color, contour_width)
     else:
         rectangle = False
         center = False
 
     if rectangle:
-        rect = cv2.minAreaRect(contour)
+        rect = cv2.minAreaRect(max(contours, key=lambda c: cv2.arcLength(c, True)))
         box = cv2.boxPoints(rect)
         box = np.intp(box)
         cv2.drawContours(canvas, [box], 0, rect_color, rect_width)
 
     if center:
-        if not rectangle: rect = cv2.minAreaRect(contour)
+        if not rectangle: rect = cv2.minAreaRect(max(contours, key=lambda c: cv2.arcLength(c, True)))
         (cx, cy), (w, h), _ = rect
         cx, cy = int(cx), int(cy)
         if center_size is None:
@@ -179,6 +186,21 @@ def extract_main_contour(bgr_img, low_threshold, min_length):
     ext_contour = max(filtered_contours, key=lambda c: cv2.arcLength(c, True))
     center = cv2.minAreaRect(ext_contour)[0]
     return bin_img, ext_contour, center
+
+"""
+Find contours, filter by arc length,
+and return list contours.
+"""
+def extract_contours(bin_img, min_length):
+    contours, _ = cv2.findContours(bin_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    filtered_contours = [
+        cnt for cnt in contours
+        if cv2.arcLength(cnt, True) >= min_length
+    ]
+    if not filtered_contours:
+        print("--ERR: extract_main_contour no contours found")
+
+    return filtered_contours
 
 def img_sharpen(frame, k):
 
