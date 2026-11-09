@@ -9,7 +9,7 @@ import constants as c
 Binarize the image, find external contours, filter by arc length,
 and return (bin_img, ext_contour, center) of the longest contour.
 """
-def _extract_main_contour(bgr_img, low_threshold, min_length):
+def extract_main_contour(bgr_img, low_threshold, min_length):
     if bgr_img.ndim == 2:
         gray_img = bgr_img
     else: 
@@ -49,7 +49,7 @@ class RefImgContext:
     center: tuple | None = None
 
     def build_ref_context(self):
-        self.bin_img, self.ext_contour, self.center = _extract_main_contour(
+        self.bin_img, self.ext_contour, self.center = extract_main_contour(
             self.bgr_img, self.ref_low_threshold, self.min_ext_contour_length
         )
 
@@ -84,7 +84,7 @@ class CurImgContext:
     center: tuple | None = None
 
     def build_cur_context(self):
-        self.bin_img, self.ext_contour, self.center = _extract_main_contour(
+        self.bin_img, self.ext_contour, self.center = extract_main_contour(
             self.bgr_img, self.ref_low_threshold, self.min_ext_contour_length
         )
 
