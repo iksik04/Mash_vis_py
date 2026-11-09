@@ -1,4 +1,5 @@
 import cv2
+import numpy as np
 
 import constants as c
 import img_process as ip
@@ -21,6 +22,40 @@ def grab_frame(cam_index: int = 0):
     return frame
 
 
+def threshold_callback(x):
+    return None
+def setBinThereshold():
+    windowName = "Set binaryzation thereshold"
+    cv2.namedWindow(windowName, cv2.WINDOW_AUTOSIZE)
+    cv2.createTrackbar("Binary thereshold",  windowName, 160, 255, threshold_callback)
+
+    cap = cv2.VideoCapture(0)
+    if not cap.isOpened():
+        print("--ERR: Can not open cam 0")
+        exit()
+    
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+    
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            print("--ERR: Can not get picture")
+            break
+        gray_img = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        low_threshold = cv2.getTrackbarPos("Binary thereshold", windowName)
+        _, bin_img = cv2.threshold(gray_img, low_threshold, 255, cv2.THRESH_BINARY)
+        cv2.imshow(windowName, bin_img)
+    
+        key = cv2.waitKey(1) & 0xFF
+        if key == ord('q'):
+            print("--MES: Program finished")
+            break
+    
+    cap.release()
+    cv2.destroyAllWindows()
+
+
 def test1():
 
     frame = grab_frame()
@@ -33,8 +68,6 @@ def test1():
     reference.build_ref_context()
 
     js.save_ref_context(reference, output_dir="presets/ref_contexts")
-
-    print("reference center:", reference.center)
 
     multi_roi = r.MultiROI(reference=reference)
     window_name = "Select ROI"
@@ -65,20 +98,16 @@ def test1():
             json_name="MultiROI_context.json",
         )
 
-    '''out_windows = []
-    for name, roi in multi_roi.rois.items():
-        patch = roi.extract(frame, ref_center=reference.center, delta_angle=0.0)
-        if patch is None or patch.size == 0:
-            print(f"--WARN: не удалось извлечь {name}")
-            continue
-        win = f"ROI: {name}"
-        out_windows.append(win)
-        cv2.namedWindow(win, cv2.WINDOW_NORMAL)
-        cv2.imshow(win, patch)'''
     cv2.waitKey(0)
 
+def change_low_threshold_callback(x):
+    return None
 def test2():
     frame = grab_frame()
+    kernel = np.array([[ 0, -1,  0],
+                   [-1,  5, -1],
+                   [ 0, -1,  0]], np.float32)
+    sharpened = cv2.filter2D(frame, -1, kernel)
     
     multi_roi = js.read_MultiROI("presets/ref_ROIs/MultiROI_context.json")
 
@@ -95,18 +124,34 @@ def test2():
     img_rois = multi_roi.extract_all(frame=frame, 
                                      ref_center=cur.center, 
                                      delta_angle=cur.delta_angle)
-    
+
+    cv2.namedWindow("ROI on current frame", cv2.WINDOW_AUTOSIZE)
+    cv2.imshow("ROI on current frame", vis)
+
     for name, patch in img_rois.items():
         if patch is None:
             continue 
         win = f"ROI {name}"
         cv2.namedWindow(win, cv2.WINDOW_AUTOSIZE)
-        cv2.imshow(win, patch)
+        cv2.createTrackbar("Thresh low",  f"ROI {name}", 160, 255, change_low_threshold_callback)
+    
+    while True:
 
+        for name, patch in img_rois.items():
+            win = f"ROI {name}"
+            if patch is None:
+                continue 
+            resized = cv2.resize(patch, None, fx=5, fy=5)
+            gray_img = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
+            low_threshold = cv2.getTrackbarPos("Thresh low", f"ROI {name}")
+            _, bin_img = cv2.threshold(gray_img, low_threshold, 255, cv2.THRESH_BINARY)
+            cv2.imshow(win, bin_img)
+   
+        key = cv2.waitKey(1) & 0xFF
+        if key == ord('q'):
+            print("--MES: Program finished")
+            break
 
-
-    cv2.namedWindow("ROI on current frame", cv2.WINDOW_AUTOSIZE)
-    cv2.imshow("ROI on current frame", vis)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
@@ -127,7 +172,6 @@ def test3():
         if not ret:
             print("--ERR: Can not get picture")
             break
-
         cv2.imshow(windowName, frame)
 
         key = cv2.waitKey(1) & 0xFF
@@ -138,9 +182,32 @@ def test3():
     cap.release()
     cv2.destroyAllWindows()
     
+def test4():
 
+    cv2.namedWindow("No filter", cv2.WINDOW_AUTOSIZE)
+    cv2.namedWindow("Filtered", cv2.WINDOW_AUTOSIZE)
+    cv2.namedWindow("Sharpened", cv2.WINDOW_AUTOSIZE)
+    cv2.namedWindow("Sharpened2", cv2.WINDOW_AUTOSIZE)
 
+    frame = grab_frame()    
+    enhanced = cv2.detailEnhance(frame, sigma_s=10, sigma_r=0.15)
 
+    kernel = np.array([[ 0, -1,  0],
+                   [-1,  5, -1],
+                   [ 0, -1,  0]], np.float32)
+    sharpened = cv2.filter2D(frame, -1, kernel)
+
+    kernel_sharpen = np.array([[-1, -1, -1],
+                           [-1,  9, -1],
+                           [-1, -1, -1]])
+    sharpened2 = cv2.filter2D(frame, -1, kernel_sharpen)
+
+    cv2.imshow("No filter", frame)
+    cv2.imshow("Filtered", enhanced)
+    cv2.imshow("Sharpened", sharpened)
+    cv2.imshow("Sharpened2", sharpened2)
+
+    cv2.waitKey(0)
 
 
 if __name__ == "__main__":

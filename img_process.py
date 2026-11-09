@@ -3,6 +3,7 @@ import numpy as np
 from dataclasses import dataclass
 
 import geometry
+import constants as c
 
 """
 Binarize the image, find external contours, filter by arc length,
@@ -134,3 +135,47 @@ def get_angle(img1, img2):
         return float('nan')
 
     return float(np.degrees(np.arctan2(M[1, 0], M[0, 0])))
+
+'''
+renders image. Countur, rectangle and center are optional
+'''
+def render_img(image, contour=None, rectangle=False, center=False,
+             contour_color=c.GREEN, contour_width=c.CONTOUR_LINE_WIDTH,
+             rect_color=c.GREEN, rect_width=c.RECT_LINE_WIDTH,
+             center_color=c.GREEN, center_size=None, center_width=c.CENTER_LINE_WIDTH
+            ):
+
+    if contour is None or len(contour) == 0:
+        contour = None
+
+    if len(image.shape) == 2:
+        canvas = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+    else:
+        canvas = image.copy()
+
+    if contour is not None:
+        cv2.drawContours(canvas, contour, -1, contour_color, contour_width)
+    else:
+        rectangle = False
+        center = False
+
+    if rectangle:
+        rect = cv2.minAreaRect(contour)
+        box = cv2.boxPoints(rect)
+        box = np.intp(box)
+        cv2.drawContours(canvas, [box], 0, rect_color, rect_width)
+
+    if center:
+        if not rectangle: rect = cv2.minAreaRect(contour)
+        (cx, cy), (w, h), _ = rect
+        cx, cy = int(cx), int(cy)
+        if center_size is None:
+            if rect is not None:
+                center_size = int(min(w, h) / 20)
+            else:
+                center_size = 100
+        cv2.line(canvas, (cx - center_size, cy), (cx + center_size, cy),
+                 center_color, center_width)
+        cv2.line(canvas, (cx, cy - center_size), (cx, cy + center_size),
+                 center_color, center_width)
+    return canvas
