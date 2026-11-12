@@ -1,10 +1,9 @@
-import json
-import os
+import json, os
 import cv2
 import numpy as np
 
-from img_process import RefImgContext
-from roi import MultiROI, SingleROI
+from .img_process import RefImgContext
+from .roi.roi import MultiROI, SingleROI
 
 
 # ---------------------------------------------------------------------------

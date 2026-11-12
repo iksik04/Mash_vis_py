@@ -1,10 +1,10 @@
 import cv2
 import numpy as np
 
-import constants as c
-import img_process as ip
-import json_process as js
-import process as p
+from backend import constants as c
+from backend import img_process as ip
+from backend import json_process as js
+from backend.operation import process as p
 
 
 """

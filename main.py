@@ -1,5 +1,5 @@
-import validation
-import settings
+from backend.operation import validation
+from backend.operation import settings
 
 def main():
     validation.validate()

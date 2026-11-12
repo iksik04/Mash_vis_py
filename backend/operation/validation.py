@@ -1,9 +1,9 @@
 import cv2
 
-import constants as c
-import img_process as ip
-import json_process as js
-import process as p
+from .. import constants as c
+from .. import img_process as ip
+from .. import json_process as js
+from . import process as p
 
 def validate():
     frame = p.grab_frame()

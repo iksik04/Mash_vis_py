@@ -2,8 +2,8 @@ import cv2
 import numpy as np
 from dataclasses import dataclass
 
-import geometry
-import constants as c
+from . import geometry
+from . import constants as c
 
 def _arr_info(a):
     return "None" if a is None else f"ndarray(shape={a.shape}, dtype={a.dtype})"

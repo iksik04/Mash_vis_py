@@ -9,12 +9,11 @@ Controls:
   - Esc                      — cancel
 """
 from dataclasses import dataclass
-
 import cv2
 import numpy as np
 
-import constants as c
-from geometry import (
+from .. import constants as c
+from backend.geometry import (
     rot_matrix,
     rect_corners,
     side_midpoints,
@@ -22,7 +21,7 @@ from geometry import (
     center_to_corner,
     normalize_angle_deg,
 )
-from roi import SingleROI
+from .roi import SingleROI
 
 # --- tunables ---------------------------------------------------------------
 _HANDLE_RADIUS = 10         # corner grab radius (px)

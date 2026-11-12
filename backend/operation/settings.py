@@ -2,11 +2,11 @@ import cv2
 import numpy as np
 import os
 
-import constants as c
-import img_process as ip
-import json_process as js
-import roi as r
-import roi_selector as roi_sel
+from .. import constants as c
+from .. import img_process as ip
+from .. import json_process as js
+from ..roi import roi as r
+from ..roi import roi_selector as roi_sel
 
 
 """
