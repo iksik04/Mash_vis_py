@@ -202,6 +202,29 @@ def extract_contours(bin_img, min_length):
 
     return filtered_contours
 
+def extract_contours_from_bgr(bgr_img, low_threshold, min_length):
+    if bgr_img.ndim == 2:
+        gray = bgr_img
+    else:
+        gray = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2GRAY)
+    _, bin_img = cv2.threshold(gray, low_threshold, 255, cv2.THRESH_BINARY)
+    return extract_contours(bin_img, min_length), bin_img
+
+def pick_main_contour(contours, patch_w, patch_h):
+    if not contours:
+        return None
+    border = np.array([[0,0],[patch_w-1,0],[patch_w-1,patch_h-1],[0,patch_h-1]], np.float32)
+    filtered = []
+    for cnt in contours:
+        # контур считается «рамкой», если его bbox совпадает с bbox патча
+        x, y, w, h = cv2.boundingRect(cnt)
+        if w >= patch_w - 1 and h >= patch_h - 1:
+            continue
+        filtered.append(cnt)
+    if not filtered:
+        return None
+    return max(filtered, key=lambda c: cv2.arcLength(c, True))
+
 def img_sharpen(frame, k):
 
     sharpened = cv2.detailEnhance(frame, sigma_s=10, sigma_r=0.15)
