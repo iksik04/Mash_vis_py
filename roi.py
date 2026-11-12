@@ -6,6 +6,7 @@ import cv2
 from geometry import rot_matrix_deg, rect_corners
 from img_process import RefImgContext
 import constants as c
+import img_process as ip
 
 
 @dataclass
@@ -70,6 +71,11 @@ class SingleROI:
         cv2.putText(vis, label, tuple(map(int, corners[0])),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, c.GREEN, 2, cv2.LINE_AA)
         return vis
+
+    def compute_contours(self, patch, ref_low_threshold):
+        thr = self.cont_bin_threshold if self.cont_bin_threshold is not None else ref_low_threshold
+        min_len = self.min_ext_cont_len if self.min_ext_cont_len is not None else c.MIN_EXT_CONTOUR_LENGTH
+        return ip.extract_contours_from_bgr(patch, thr, min_len)
 
 
 @dataclass
@@ -144,4 +150,8 @@ class MultiROI:
             else:
                 result[name] = patch
         return result
+
+    def set_contour(self, name, contour):
+        roi = self.rois[name]
+        roi.main_contour = None if contour is None else np.asarray(contour, np.int32).reshape(-1, 1, 2)
     
