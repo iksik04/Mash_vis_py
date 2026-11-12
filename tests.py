@@ -16,7 +16,7 @@ each ROI. Press 'q' to exit.
 def test1():
     frame = p.grab_frame()
     
-    multi_roi = js.read_MultiROI("presets/ref_ROIs/MultiROI_context.json")
+    multi_roi = js.read_MultiROI(c.MULTIROI_JSON_PATH, expected_version=2)
 
     cur = ip.CurImgContext(bgr_img=frame,
                            ref_low_threshold=multi_roi.reference.ref_low_threshold, 
@@ -72,13 +72,13 @@ def test2():
     windowName = "Test"
     cv2.namedWindow(windowName, cv2.WINDOW_AUTOSIZE)
 
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(c.CAM_INDEX)
     if not cap.isOpened():
-        print("--ERR: Can not open cam 0")
+        print(f"--ERR: Can not open cam {c.CAM_INDEX}")
         exit()
 
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, c.CAM_WIDTH)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, c.CAM_HEIGHT)
 
     while True:
         ret, frame = cap.read()

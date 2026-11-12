@@ -13,7 +13,7 @@ import cv2
 import numpy as np
 
 from .. import constants as c
-from backend.geometry import (
+from ..geometry import (
     rot_matrix,
     rect_corners,
     side_midpoints,

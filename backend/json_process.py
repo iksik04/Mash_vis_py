@@ -4,6 +4,7 @@ import numpy as np
 
 from .img_process import RefImgContext
 from .roi.roi import MultiROI, SingleROI
+from . import constants as c
 
 
 # ---------------------------------------------------------------------------
@@ -138,10 +139,10 @@ The BGR and binary images are written next to the JSON file.
 Returns the full path to the created JSON file.
 """
 def save_ref_context(ref_ctx: "RefImgContext",
-                     output_dir: str = ".",
-                     json_name: str = "Ref_img_context.json",
-                     ref_img_name: str = "ref.jpg",
-                     ref_bin_img_name: str = "ref_bin.jpg",
+                     output_dir: str = c.REF_CONTEXTS_DIR,
+                     json_name: str = c.REF_CONTEXT_JSON_NAME,
+                     ref_img_name: str = c.REF_IMG_NAME,
+                     ref_bin_img_name: str = c.REF_BIN_IMG_NAME,
                      version: int = 1) -> str:
 
     if ref_ctx.ext_contour is None or ref_ctx.center is None:
@@ -254,8 +255,8 @@ Returns the full path to the created JSON file.
 """
 def save_MultiROI(multi_roi: "MultiROI",
                   reference_context_path: str,
-                  output_dir: str = ".",
-                  json_name: str = "MultiROI_context.json",
+                  output_dir: str = c.REF_ROIS_DIR,
+                  json_name: str = c.MULTIROI_JSON_NAME,
                   version: int = 2) -> str:
 
     if multi_roi is None:

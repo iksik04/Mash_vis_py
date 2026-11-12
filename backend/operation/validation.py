@@ -8,7 +8,7 @@ from . import process as p
 def validate():
     frame = p.grab_frame()
 
-    multi_roi = js.read_MultiROI("presets/ref_ROIs/MultiROI_context.json",
+    multi_roi = js.read_MultiROI(c.MULTIROI_JSON_PATH,
                                  expected_version=2)
 
     cur = ip.CurImgContext(

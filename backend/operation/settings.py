@@ -22,13 +22,13 @@ def setContourLenghtBinThereshold():
     cv2.createTrackbar("Contour lenght thereshold",  windowName, 500, 5000, lambda x: None)
     cv2.createTrackbar("Binaryzation thereshold",  windowName, 80, 255, lambda x: None)
 
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(c.CAM_INDEX)
     if not cap.isOpened():
-        print("--ERR: Can not open cam 0")
+        print(f"--ERR: Can not open cam {c.CAM_INDEX}")
         exit()
     
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, c.CAM_WIDTH)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, c.CAM_HEIGHT)
     
     while True:
         ret, frame = cap.read()
@@ -73,23 +73,23 @@ ref_ROI_output_dir : str
 ref_ROI_json_name : str
     File name of the MultiROI JSON.
 """
-def setRefContext(ref_context_output_dir: str = "presets/ref_contexts",
-                  ref_context_json_name: str = "Ref_img_context.json",
-                  ref_ROI_output_dir: str = "presets/ref_ROIs",
-                  ref_ROI_json_name: str = "MultiROI_context.json"):
+def setRefContext(ref_context_output_dir: str = c.REF_CONTEXTS_DIR,
+                  ref_context_json_name: str = c.REF_CONTEXT_JSON_NAME,
+                  ref_ROI_output_dir: str = c.REF_ROIS_DIR,
+                  ref_ROI_json_name: str = c.MULTIROI_JSON_NAME):
     selectBinThereshWindowName = "Select binaryzation thereshold"
     cv2.namedWindow(selectBinThereshWindowName, cv2.WINDOW_AUTOSIZE)
     cv2.createTrackbar("Binaryzation thereshold",  selectBinThereshWindowName, 127, 255, lambda x: None)
     bin_threshold_set = False
     select_ROI = False
 
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(c.CAM_INDEX)
     if not cap.isOpened():
-        print("--ERR: Can not open cam 0")
+        print(f"--ERR: Can not open cam {c.CAM_INDEX}")
         exit()
     
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, c.CAM_WIDTH)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, c.CAM_HEIGHT)
 
     print("--MES: Select binaryzation thereshold; press 'n' key if selected")
 
@@ -179,9 +179,9 @@ json_name : str
     File name of the updated MultiROI JSON.
 """
 def setROIcontours(
-    json_path: str = "presets/ref_ROIs/MultiROI_context.json",
-    output_dir: str = "presets/ref_ROIs",
-    json_name: str = "MultiROI_context.json",
+    json_path: str = c.MULTIROI_JSON_PATH,
+    output_dir: str = c.REF_ROIS_DIR,
+    json_name: str = c.MULTIROI_JSON_NAME,
 ):
     multi = js.read_MultiROI(json_path, expected_version=2)
     ref = multi.reference
@@ -262,7 +262,7 @@ def setROIcontours(
 
     js.save_MultiROI(
         multi,
-        reference_context_path="presets/ref_contexts/Ref_img_context.json",
+        reference_context_path=c.REF_CONTEXT_JSON_PATH,
         output_dir=output_dir,
         json_name=json_name,
         version=2,
