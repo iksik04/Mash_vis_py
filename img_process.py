@@ -163,6 +163,20 @@ def render_img(image, contours=None, rectangle=False, center=False,
                  center_color, center_width)
     return canvas
 
+def _render_roi_contours(patch, contours, main_cnt, name, thr, min_len, scale=5):
+    vis = cv2.resize(patch, None, fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST)
+    if len(vis.shape) == 2:
+        vis = cv2.cvtColor(vis, cv2.COLOR_GRAY2BGR)
+    if contours:
+        scaled = [ (cnt * scale).astype(np.int32) for cnt in contours ]
+        cv2.drawContours(vis, scaled, -1, c.GREEN, c.CONTOUR_LINE_WIDTH)
+    if main_cnt is not None:
+        scaled_main = (main_cnt * scale).astype(np.int32)
+        cv2.drawContours(vis, [scaled_main], -1, c.BLUE, c.RECT_LINE_WIDTH)
+    cv2.putText(vis, f"{name}  thr={thr}  min_len={int(min_len)}",
+                (5, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, c.GREEN, 2, cv2.LINE_AA)
+    return vis
+
 """
 Binarize the image, find external contours, filter by arc length,
 and return (bin_img, ext_contour, center) of the longest contour.
