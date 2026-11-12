@@ -9,39 +9,14 @@ import roi as r
 import roi_selector as roi_sel
 
 
-def setBinThereshold():
-    windowName = "Select binaryzation thereshold"
-    cv2.namedWindow(windowName, cv2.WINDOW_AUTOSIZE)
-    cv2.createTrackbar("Binaryzation thereshold",  windowName, 160, 255, lambda x: None)
+"""
+Interactive tool to tune contour length and binarization thresholds.
 
-    cap = cv2.VideoCapture(0)
-    if not cap.isOpened():
-        print("--ERR: Can not open cam 0")
-        exit()
-    
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
-    
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            print("--ERR: Can not get picture")
-            break
-
-        gray_img = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        low_threshold = cv2.getTrackbarPos("Binaryzation thereshold", windowName)
-        _, bin_img = cv2.threshold(gray_img, low_threshold, 255, cv2.THRESH_BINARY)
-        cv2.imshow(windowName, bin_img)
-    
-        key = cv2.waitKey(1) & 0xFF
-        if key == ord('q'):
-            print("--MES: Program finished")
-            break
-    
-    cap.release()
-    cv2.destroyAllWindows()
-
-def setContourLenght():
+Renders the extracted contours on a live camera feed, controlled by two
+trackbars: "Contour lenght thereshold" and "Binaryzation thereshold".
+Press 'q' to exit.
+"""
+def setContourLenghtBinThereshold():
     windowName = "Select contour lenght"
     cv2.namedWindow(windowName, cv2.WINDOW_AUTOSIZE)
     cv2.createTrackbar("Contour lenght thereshold",  windowName, 500, 5000, lambda x: None)
@@ -78,6 +53,26 @@ def setContourLenght():
     cap.release()
     cv2.destroyAllWindows()
 
+"""
+Interactively build and save a reference context and its MultiROI set.
+
+Workflow:
+  1. Pick the binarization threshold on a live feed (press 'n' to confirm).
+  2. Build a RefImgContext from the current frame and save it.
+  3. Select zero or more rotated ROIs interactively and save them as a
+     MultiROI JSON.
+
+Parameters
+----------
+ref_context_output_dir : str
+    Directory for the reference context JSON and its images.
+ref_context_json_name : str
+    File name of the reference context JSON.
+ref_ROI_output_dir : str
+    Directory for the MultiROI JSON.
+ref_ROI_json_name : str
+    File name of the MultiROI JSON.
+"""
 def setRefContext(ref_context_output_dir: str = "presets/ref_contexts",
                   ref_context_json_name: str = "Ref_img_context.json",
                   ref_ROI_output_dir: str = "presets/ref_ROIs",
@@ -161,6 +156,28 @@ def setRefContext(ref_context_output_dir: str = "presets/ref_contexts",
                     json_name=ref_ROI_json_name,
                 )
 
+"""
+Interactively (re)define the main contour of each ROI and save the result.
+
+For every ROI the reference patch is extracted and processed with a
+trackbar-controlled binarization threshold and minimum contour length.
+The picked main contour is stored in ROI-local coordinates.
+
+Controls:
+  - 'n' / Enter / Space — confirm current ROI
+  - 's'                 — skip current ROI without changes
+  - 'q'                 — save confirmed ROIs and exit
+  - Esc                 — cancel the whole session (nothing saved)
+
+Parameters
+----------
+json_path : str
+    Path to the MultiROI JSON to edit.
+output_dir : str
+    Directory where the updated MultiROI JSON is written.
+json_name : str
+    File name of the updated MultiROI JSON.
+"""
 def setROIcontours(
     json_path: str = "presets/ref_ROIs/MultiROI_context.json",
     output_dir: str = "presets/ref_ROIs",

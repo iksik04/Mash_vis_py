@@ -26,10 +26,25 @@ class SingleROI:
     cont_bin_threshold: int | None = None
     min_ext_cont_len: float | None = None
 
+    """
+    World-space center of this ROI for a given reference center and rotation.
+
+    `offset` is rotated by `delta_angle` and added to `ref_center`.
+    """
     def roi_center_at(self, ref_center, delta_angle=0.0):
         R = rot_matrix_deg(delta_angle)
         return np.asarray(ref_center, np.float32) + R @ np.asarray(self.offset, np.float32)
 
+    """
+    World-space corners, center and rotation matrix of this ROI.
+
+    Returns
+    -------
+    (corners, roi_center, R_roi)
+        corners   : int32 array of 4 points (TL, TR, BR, BL)
+        roi_center: float32 center in world coordinates
+        R_roi     : 2x2 rotation matrix for (delta_angle + rotation_angle)
+    """
     def corners_at(self, ref_center, delta_angle=0.0):
         roi_center = self.roi_center_at(ref_center, delta_angle)
         angle_rad = np.radians(delta_angle + self.rotation_angle)
@@ -37,6 +52,12 @@ class SingleROI:
                                self.width, self.height, angle_rad)
         return np.intp(corners), roi_center, rot_matrix_deg(delta_angle + self.rotation_angle)
 
+    """
+    Extract the ROI patch from `frame` as an upright image of size (w, h).
+
+    Uses a warp affine that maps the rotated ROI back to an axis-aligned
+    rectangle. Returns None if `frame` is None or the ROI has non-positive size.
+    """
     def extract(self, frame, ref_center, delta_angle=0.0):
         if frame is None:
             return None
@@ -55,7 +76,12 @@ class SingleROI:
                              flags=cv2.INTER_CUBIC,
                              borderMode=cv2.BORDER_REPLICATE)
         return roi if roi.size > 0 else None
-    
+
+    """
+    Draw this ROI (outline, center marker, label) on a copy of `frame`.
+
+    Returns the annotated copy, or None if `frame` is None.
+    """
     def render(self, frame, ref_center, delta_angle=0.0,
                name=None, color=c.BLUE, width=c.ROI_LINE_WIDTH):
         if frame is None:
@@ -72,6 +98,12 @@ class SingleROI:
                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, c.GREEN, 2, cv2.LINE_AA)
         return vis
 
+    """
+    Binarize `patch` and return its filtered contours and binary image.
+
+    Threshold and minimum contour length fall back to the reference values
+    (`ref_low_threshold`, `c.MIN_EXT_CONTOUR_LENGTH`) when not set on the ROI.
+    """
     def compute_contours(self, patch, ref_low_threshold):
         thr = self.cont_bin_threshold if self.cont_bin_threshold is not None else ref_low_threshold
         min_len = self.min_ext_cont_len if self.min_ext_cont_len is not None else c.MIN_EXT_CONTOUR_LENGTH
@@ -84,14 +116,26 @@ class MultiROI:
     reference: RefImgContext
     rois: dict = field(default_factory=dict)
 
+    """
+    Add `roi` to the container.
+
+    Raises KeyError if a ROI with the same name already exists and
+    `replace` is False.
+    """
     def add(self, roi, replace=False):
         if not replace and roi.name in self.rois:
             raise KeyError("--ERR: MultiROI ROI '%s' already exists" % roi.name)
         self.rois[roi.name] = roi
 
+    """
+    Remove the ROI named `name` if present (no error otherwise).
+    """
     def remove(self, name):
         self.rois.pop(name, None)
 
+    """
+    Return the ROI named `name`, or None if it does not exist.
+    """
     def get(self, name):
         return self.rois.get(name)
 
@@ -151,6 +195,11 @@ class MultiROI:
                 result[name] = patch
         return result
 
+    """
+    Set the stored main contour of the ROI named `name`.
+
+    `contour` may be None (clear) or any array convertible to (-1, 1, 2) int32.
+    """
     def set_contour(self, name, contour):
         roi = self.rois[name]
         roi.main_contour = None if contour is None else np.asarray(contour, np.int32).reshape(-1, 1, 2)

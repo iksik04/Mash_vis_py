@@ -224,6 +224,12 @@ def extract_contours_from_bgr(bgr_img, low_threshold, min_length):
     _, bin_img = cv2.threshold(gray, low_threshold, 255, cv2.THRESH_BINARY)
     return extract_contours(bin_img, min_length), bin_img
 
+"""
+Pick the main (longest) contour from `contours`, ignoring contours whose
+bounding box covers the whole patch (border frame).
+
+Returns the selected contour, or None if nothing suitable is found.
+"""
 def pick_main_contour(contours, patch_w, patch_h):
     if not contours:
         return None
@@ -239,6 +245,11 @@ def pick_main_contour(contours, patch_w, patch_h):
         return None
     return max(filtered, key=lambda c: cv2.arcLength(c, True))
 
+"""
+Sharpen `frame` via detail enhancement and an optional unsharp kernel.
+
+`k` scales the laplacian-style sharpening kernel.
+"""
 def img_sharpen(frame, k):
 
     sharpened = cv2.detailEnhance(frame, sigma_s=10, sigma_r=0.15)

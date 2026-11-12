@@ -7,7 +7,12 @@ import json_process as js
 import process as p
 
 
-
+"""
+End-to-end test: read the MultiROI preset, detect the current frame's
+reference context and rotation, render all ROIs, extract their patches,
+then display a live, trackbar-controlled sharpened and binarized view of
+each ROI. Press 'q' to exit.
+"""
 def test1():
     frame = p.grab_frame()
     
@@ -60,9 +65,9 @@ def test1():
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-'''
-Shows images from cap continiously
-'''
+"""
+Continuously show frames from camera 0 at 1920x1080. Press 'q' to exit.
+"""
 def test2():
     windowName = "Test"
     cv2.namedWindow(windowName, cv2.WINDOW_AUTOSIZE)
@@ -90,9 +95,10 @@ def test2():
     cap.release()
     cv2.destroyAllWindows()
 
-'''
-Testing different sharpen filters
-'''
+"""
+Compare no filter, detail enhancement, and two sharpening kernels on a
+single captured frame. Press any key to close.
+"""
 def test3():
 
     cv2.namedWindow("No filter", cv2.WINDOW_AUTOSIZE)

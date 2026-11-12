@@ -34,6 +34,9 @@ _WAIT_MS = 20
 # ---------------------------------------------------------------------------
 # Hit-testing
 # ---------------------------------------------------------------------------
+"""
+Euclidean distance between two 2D points.
+"""
 def _dist(p, q):
     return float(np.hypot(p[0] - q[0], p[1] - q[1]))
 
@@ -75,6 +78,9 @@ def _hit_test(mouse, corners, mids, handle_radius):
 # ---------------------------------------------------------------------------
 # Drawing
 # ---------------------------------------------------------------------------
+"""
+Draw the ROI outline, corner handles, rotation marker and center cross.
+"""
 def _draw(frame, corners, mids, handle_radius):
     cv2.polylines(frame, [np.round(corners).astype(np.int32)], True,
                   c.BLUE, c.ROI_LINE_WIDTH)

@@ -1,6 +1,11 @@
 import cv2
 
+"""
+Grab a single frame from the camera at `cam_index` (default 0).
 
+Requests 1920x1080 and releases the capture immediately.
+Raises IOError if the frame cannot be read.
+"""
 def grab_frame(cam_index: int = 0):
     cap = cv2.VideoCapture(cam_index)
     frame = None
