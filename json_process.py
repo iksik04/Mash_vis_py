@@ -257,7 +257,7 @@ def save_MultiROI(multi_roi: "MultiROI",
                   reference_context_path: str,
                   output_dir: str = ".",
                   json_name: str = "MultiROI_context.json",
-                  version: int = 1) -> str:
+                  version: int = 2) -> str:
 
     if multi_roi is None:
         raise ValueError("--ERR: save_MultiROI multi_roi is None")
@@ -321,7 +321,7 @@ returned MultiROI instance.
 
 Returns the filled MultiROI instance.
 """
-def read_MultiROI(json_path: str, expected_version: int = 1) -> "MultiROI":
+def read_MultiROI(json_path: str, expected_version: int = 2) -> "MultiROI":
     data = _read_json(json_path)
     caller = "read_MultiROI"
 
@@ -349,7 +349,7 @@ def read_MultiROI(json_path: str, expected_version: int = 1) -> "MultiROI":
     multi = MultiROI(reference=reference)
 
     roi_keys = ("name", "offset", "width", "height",
-                "rotation_angle", "OCR_allowlist")
+                "rotation_angle")
     for i, r in enumerate(rois_data):
         if not isinstance(r, dict):
             raise ValueError(f"--ERR: {caller} roi[{i}] must be an object")
