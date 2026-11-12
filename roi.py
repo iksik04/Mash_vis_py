@@ -16,7 +16,14 @@ class SingleROI:
     width: float
     height: float
     rotation_angle: float = 0.0
+    # validation.data
     OCR_allowlist: str = ""
+    main_contour: np.ndarray | None = None
+
+    # validation.params
+    ocr_bin_threshold: int | None = None
+    cont_bin_threshold: int | None = None
+    min_ext_cont_len: float | None = None
 
     def roi_center_at(self, ref_center, delta_angle=0.0):
         R = rot_matrix_deg(delta_angle)

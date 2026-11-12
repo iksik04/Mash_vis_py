@@ -232,11 +232,11 @@ def validation():
         # DEBAG
         cv2.namedWindow(f"Cur ROI {name}", cv2.WINDOW_AUTOSIZE)
         cur_canvas = ip.render_img(cur_patch, cur_contour)
-        cv2.imshow(f"Cur ROI {name}", cv2.resize(cur_canvas, None, fx=2, fy=2))
+        cv2.imshow(f"Cur ROI {name}", cv2.resize(cur_canvas, None, fx=4, fy=4))
      
         cv2.namedWindow(f"ref ROI {name}", cv2.WINDOW_AUTOSIZE)
         ref_canvas = ip.render_img(ref_patch, ref_contour)
-        cv2.imshow(f"ref ROI {name}", cv2.resize(ref_canvas, None, fx=2, fy=2))
+        cv2.imshow(f"ref ROI {name}", cv2.resize(ref_canvas, None, fx=4, fy=4))
 
     
         roi_match = cv2.matchShapes(
@@ -254,3 +254,4 @@ def validation():
 
 if __name__ == "__main__":
     validation()
+    #setBinThereshold()
