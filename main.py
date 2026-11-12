@@ -6,6 +6,7 @@ def main():
     frame = process.grab_frame()
     validation.validate(frame)
     #settings.setContourLenghtBinThereshold()
+    #settings.setRefContext()
     #settings.setROIcontours()  
 
 
