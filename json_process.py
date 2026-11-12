@@ -10,6 +10,7 @@ from roi import MultiROI, SingleROI
 # ---------------------------------------------------------------------------
 # Generic JSON helpers
 # ---------------------------------------------------------------------------
+
 """
 Write `data` as JSON to `path` with the project's standard formatting.
 
@@ -46,7 +47,7 @@ def _check_version(data: dict, expected_version: int, caller: str) -> None:
     file_version = data.get("version")
     if file_version is None:
         raise ValueError(f"--ERR: {caller} JSON has no 'version' field")
-    if int(file_version) != int(expected_version):
+    if int(file_version) not in (1, int(expected_version)):
         raise ValueError(
             f"--ERR: {caller} version mismatch: "
             f"file={file_version}, expected={expected_version}"
@@ -87,6 +88,37 @@ def _parse_pair(value, name: str, caller: str) -> tuple:
             f"--ERR: {caller} '{name}' contains non-numeric values: {e}"
         ) from e
 
+def _contour_to_list(cnt):
+    if cnt is None:
+        return None
+    return [[float(pt[0][0]), float(pt[0][1])] for pt in cnt]
+
+def _contour_from_list(data):
+    if data is None:
+        return None
+    arr = np.array(data, dtype=np.float32).reshape(-1, 1, 2)
+    return arr.astype(np.int32)
+
+def _read_validation(r, caller):
+    val = r.get("validation")
+    if not isinstance(val, dict):
+        # старый v1-файл или поле не задано — дефолты
+        return {
+            "ocr_allowlist": str(r.get("OCR_allowlist", "")),
+            "main_contour": None,
+            "ocr_bin_threshold": None,
+            "cont_bin_threshold": None,
+            "min_ext_cont_len": None,
+        }
+    data = val.get("data", {})
+    params = val.get("params", {})
+    return {
+        "ocr_allowlist": str(data.get("ocr_allowlist", "")),
+        "main_contour": _contour_from_list(data.get("main_contour")),
+        "ocr_bin_threshold": params.get("ocr_bin_threshold"),
+        "cont_bin_threshold": params.get("cont_bin_threshold"),
+        "min_ext_cont_len": params.get("min_ext_cont_len"),
+    }
 
 # ---------------------------------------------------------------------------
 # RefImgContext serialization
@@ -256,7 +288,17 @@ def save_MultiROI(multi_roi: "MultiROI",
             "width": float(roi.width),
             "height": float(roi.height),
             "rotation_angle": float(roi.rotation_angle),
-            "OCR_allowlist": str(roi.OCR_allowlist),
+            "validation": {
+                "data": {
+                    "ocr_allowlist": str(roi.OCR_allowlist),
+                    "main_contour": _contour_to_list(roi.main_contour),
+                },
+                "params": {
+                    "ocr_bin_threshold": None if roi.ocr_bin_threshold is None else int(roi.ocr_bin_threshold),
+                    "cont_bin_threshold": None if roi.cont_bin_threshold is None else int(roi.cont_bin_threshold),
+                    "min_ext_cont_len": None if roi.min_ext_cont_len is None else float(roi.min_ext_cont_len),
+                },
+            },
         }
         for roi in multi_roi.rois.values()
     ]
@@ -315,13 +357,18 @@ def read_MultiROI(json_path: str, expected_version: int = 1) -> "MultiROI":
 
         offset = _parse_pair(r["offset"], f"roi[{i}].offset", caller)
 
+        v = _read_validation(r, caller)
         roi = SingleROI(
             name=str(r["name"]),
             offset=offset,
             width=float(r["width"]),
             height=float(r["height"]),
             rotation_angle=float(r["rotation_angle"]),
-            OCR_allowlist=str(r["OCR_allowlist"]),
+            OCR_allowlist=v["ocr_allowlist"],
+            main_contour=v["main_contour"],
+            ocr_bin_threshold=v["ocr_bin_threshold"],
+            cont_bin_threshold=v["cont_bin_threshold"],
+            min_ext_cont_len=v["min_ext_cont_len"],
         )
         multi.add(roi)  # raises KeyError on duplicate names
 
