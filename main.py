@@ -1,9 +1,11 @@
 from backend.operation import validation
 from backend.operation import settings
+from backend.operation import process
 
 def main():
-    validation.validate()
-    #settings.setBinThereshold()
+    frame = process.grab_frame()
+    validation.validate(frame)
+    #settings.setContourLenghtBinThereshold()
     #settings.setROIcontours()  
 
 

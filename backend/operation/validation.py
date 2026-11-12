@@ -1,66 +1,36 @@
 import cv2
+from dataclasses import dataclass, field
 
 from .. import constants as c
 from .. import img_process as ip
 from .. import json_process as js
-from . import process as p
 
-def validate():
-    frame = p.grab_frame()
+@dataclass
+class ValidationResult:
+    ok: bool
+    stage: str                    # "ext_contour" | "roi_contours" | "ok"
+    rois: dict = field(default_factory=dict)   # name -> bool|None
+    message: str = ""
 
-    multi_roi = js.read_MultiROI(c.MULTIROI_JSON_PATH,
-                                 expected_version=2)
+def checkExtContour(ref_contour, cur_contour):
+    if ref_contour is None or cur_contour is None:
+        return None
+    match_value = cv2.matchShapes(ref_contour, cur_contour, cv2.CONTOURS_MATCH_I1, 0.0)
+    return match_value <= c.EXT_COUNTUR_MATCH_THRESHOLD
 
-    cur = ip.CurImgContext(
-        bgr_img=frame,
-        ref_low_threshold=multi_roi.reference.ref_low_threshold,
-        min_ext_contour_length=c.MIN_EXT_CONTOUR_LENGTH,
-    )
-    cur.reference = multi_roi.reference
-    cur.build_cur_context()
-
-    vis = multi_roi.render_all(frame=frame,
-                               ref_center=cur.center,
-                               delta_angle=cur.delta_angle)
-
-    # Reference patches come from the stored BGR reference image so that
-    # their coordinates match the `main_contour` saved by setROIcontours().
-    ref_rois = multi_roi.extract_all(frame=cur.reference.bgr_img,
-                                     ref_center=cur.reference.center,
-                                     delta_angle=0.0)
-
-    # Current patches come from the current BGR frame; the ROI-specific
-    # threshold and min length are applied later, exactly as at save time.
-    cur_rois = multi_roi.extract_all(frame=cur.bgr_img,
-                                     ref_center=cur.center,
-                                     delta_angle=cur.delta_angle)
-
-    # --- external contour of the whole image ---
-    match_value = cv2.matchShapes(
-        cur.reference.ext_contour, cur.ext_contour,
-        cv2.CONTOURS_MATCH_I1, 0.0,
-    )
-    ext_ng = match_value >= c.EXT_COUNTUR_MATCH_THRESHOLD
-    print(f"--VAL ext_contours {match_value:.3f} {'--NG' if ext_ng else '--OK'}")
-
-    any_ng = ext_ng
-
-    # --- per-ROI validation ---
+def checkROIcontours(ref_rois, cur_rois, multi_roi):
+    results = {}
     for name, roi in multi_roi.rois.items():
         ref_patch = ref_rois.get(name)
         cur_patch = cur_rois.get(name)
+
         if ref_patch is None or cur_patch is None:
-            print(f"--VAL ROI '{name}' --SKIP (patch is None)")
+            results[name] = None          # SKIP
             continue
-
-        # Reference contour is the one frozen by setROIcontours().
         if roi.main_contour is None:
-            print(f"--VAL ROI '{name}' --SKIP (main_contour not set; run setROIcontours)")
+            results[name] = None          # SKIP
             continue
-        ref_contour = roi.main_contour
 
-        # Current contour is obtained with the same chain as at save time
-        # (binarize by ROI threshold -> find contours -> pick main).
         thr = roi.cont_bin_threshold if roi.cont_bin_threshold is not None \
               else multi_roi.reference.ref_low_threshold
         min_len = roi.min_ext_cont_len if roi.min_ext_cont_len is not None \
@@ -71,25 +41,68 @@ def validate():
                                            cur_patch.shape[1],
                                            cur_patch.shape[0])
         if cur_contour is None:
-            print(f"--VAL ROI '{name}' --NG (no main contour)")
-            any_ng = True
+            results[name] = None          # SKIP
             continue
 
-        '''# Debug visualization (reference vs current).
-        cur_canvas = ip.render_img(cur_patch, cur_contour)
-        cv2.imshow(f"Cur ROI {name}", cv2.resize(cur_canvas, None, fx=4, fy=4))
-        ref_canvas = ip.render_img(ref_patch, ref_contour)
-        cv2.imshow(f"Ref ROI {name}", cv2.resize(ref_canvas, None, fx=4, fy=4))'''
+        match = cv2.matchShapes(roi.main_contour, cur_contour,
+                                cv2.CONTOURS_MATCH_I1, 0.0)
+        results[name] = match <= c.ROI_CONTOUR_MATCH_THRESHOLD
+    return results
 
-        roi_match = cv2.matchShapes(ref_contour, cur_contour,
-                                    cv2.CONTOURS_MATCH_I1, 0.0)
-        roi_ng = roi_match >= c.ROI_CONTOUR_MATCH_THRESHOLD
-        print(f"--VAL ROI '{name}' matchShapes={roi_match:.3f} "
-              f"{'--NG' if roi_ng else '--OK'}")
-        any_ng = any_ng or roi_ng
+def validate(frame, *, show: bool = True):
+    multi_roi = js.read_MultiROI(c.MULTIROI_JSON_PATH, expected_version=2)
 
-    print(f"--VAL OVERALL {'--NG' if any_ng else '--OK'}")
+    cur = ip.CurImgContext(
+        bgr_img=frame,
+        ref_low_threshold=multi_roi.reference.ref_low_threshold,
+        min_ext_contour_length=multi_roi.reference.min_ext_contour_length,
+    )
+    cur.reference = multi_roi.reference
+    cur.build_cur_context()
 
-    #cv2.imshow("validation", vis)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    # --- Stage 1: external contour --------------------------------------
+    ext_val = checkExtContour(cur.reference.ext_contour, cur.ext_contour)
+    if ext_val is not True:                     # NG or SKIP
+        result = ValidationResult(
+            ok=False, stage="ext_contour",
+            message="external contour mismatch" if ext_val is False
+                    else "external contour unavailable",
+        )
+        if show: print_result(result)
+        return result
+
+    # --- Stage 2: ROI contours ------------------------------------------
+    ref_rois = multi_roi.extract_all(frame=cur.reference.bgr_img,
+                                     ref_center=cur.reference.center,
+                                     delta_angle=0.0)
+    cur_rois = multi_roi.extract_all(frame=cur.bgr_img,
+                                     ref_center=cur.center,
+                                     delta_angle=cur.delta_angle)
+    roi_vals = checkROIcontours(ref_rois, cur_rois, multi_roi)
+
+    failed = [n for n, v in roi_vals.items() if v is False]
+    ok = not failed
+
+    result = ValidationResult(
+        ok=ok, stage="roi_contours", rois=roi_vals,
+        message="" if ok else f"failed ROIs: {', '.join(failed)}",
+    )
+    if show: print_result(result)
+    return result
+
+def print_result(r: ValidationResult) -> None:
+    print("=" * 60)
+    if r.ok:
+        print("--VAL OVERALL --OK")
+        return
+
+    print(f"--VAL OVERALL --NG  (stage: {r.stage})")
+    if r.stage == "ext_contour":
+        print(f"       {r.message}")
+    elif r.stage == "roi_contours":
+        for name, v in r.rois.items():
+            tag = "--OK" if v is True else "--NG" if v is False else "--SKIP"
+            print(f"       ROI '{name}' {tag}")
+        if r.message:
+            print(f"       {r.message}")
+    print("=" * 60)
