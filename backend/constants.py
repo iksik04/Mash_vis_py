@@ -25,8 +25,10 @@ CAM_WIDTH  = 1920
 CAM_HEIGHT = 1080
 
 # Colours
-GREEN = (0, 255, 0)
-BLUE  = (255, 0, 0)
+GREEN  = (0, 255, 0)
+BLUE   = (255, 0, 0)
+RED    = (0, 0, 255)
+YELLOW = (0, 255, 255)
 
 # Line width
 CONTOUR_LINE_WIDTH = 2
