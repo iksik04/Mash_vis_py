@@ -278,8 +278,8 @@ Steps:
      The threshold must be chosen so that no inversion is required:
      the text should end up BLACK on WHITE background.
   3. Auto-upscale small images so the shorter side reaches at least
-     `_OCR_TARGET_MIN_SIDE` px (capped at `_OCR_MAX_SCALE`), preserving
-     aspect ratio. Larger images are left untouched.
+     `min_side` px (capped at `_OCR_MAX_SCALE`), preserving aspect ratio.
+     Larger images are left untouched.
 
 Parameters
 ----------
@@ -287,6 +287,8 @@ img : np.ndarray
     Input image (BGR or already grayscale).
 ocr_bin_threshold : int
     Threshold used for cv2.threshold(..., THRESH_BINARY).
+min_side : int
+    Target minimum side (px) for auto-upscale. Default 100.
 debug : bool
     If True, returns (prep_img, debug_imgs) where debug_imgs is a dict
     with intermediate results: {"gray": ..., "bin": ...}. If False,
@@ -298,10 +300,9 @@ prep_img : np.ndarray
     uint8 single-channel image ready for pytesseract.
 debug_imgs : dict  (only when debug=True)
 """
-_OCR_TARGET_MIN_SIDE = 100
 _OCR_MAX_SCALE = 4.0
 
-def OCR_imgPreprocess(img, ocr_bin_threshold, debug=False):
+def OCR_imgPreprocess(img, ocr_bin_threshold, min_side=100, debug=False):
     if img is None or img.size == 0:
         raise ValueError("--ERR: OCR_imgPreprocess img is empty")
     if not isinstance(ocr_bin_threshold, (int, np.integer)):
@@ -309,6 +310,9 @@ def OCR_imgPreprocess(img, ocr_bin_threshold, debug=False):
     ocr_bin_threshold = int(ocr_bin_threshold)
     if not (0 <= ocr_bin_threshold <= 255):
         raise ValueError("--ERR: OCR_imgPreprocess ocr_bin_threshold out of [0,255]")
+    if not isinstance(min_side, (int, np.integer)) or int(min_side) <= 0:
+        raise ValueError("--ERR: OCR_imgPreprocess min_side must be positive int")
+    min_side = int(min_side)
 
     # 1) grayscale
     if img.ndim == 2:
@@ -321,9 +325,9 @@ def OCR_imgPreprocess(img, ocr_bin_threshold, debug=False):
 
     # 3) auto-upscale small images
     h, w = bin_img.shape[:2]
-    min_side = min(h, w)
-    if min_side < _OCR_TARGET_MIN_SIDE:
-        scale = min(_OCR_TARGET_MIN_SIDE / float(min_side), _OCR_MAX_SCALE)
+    short = min(h, w)
+    if short < min_side:
+        scale = min(min_side / float(short), _OCR_MAX_SCALE)
         new_w = max(1, int(round(w * scale)))
         new_h = max(1, int(round(h * scale)))
         prep_img = cv2.resize(bin_img, (new_w, new_h),
