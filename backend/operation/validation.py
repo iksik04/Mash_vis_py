@@ -1,10 +1,12 @@
 import cv2
+import numpy as np
 from dataclasses import dataclass, field
 
 from .. import constants as c
 from .. import img_process as ip
 from .. import json_process as js
 from ..ocr import getTextFromImg
+
 
 @dataclass
 class ValidationResult:
@@ -14,23 +16,38 @@ class ValidationResult:
     symbols_info: dict = field(default_factory=dict)  # name -> {"expected": str, "recognized": str}
     message: str = ""
 
+    # --- данные для визуализации ---
+    ext_contour_ok: bool | None = None
+    cur_center: tuple | None = None
+    delta_angle: float | None = None
+    cur_ext_contour: np.ndarray | None = None
+    roi_contours: dict = field(default_factory=dict)   # name -> contour | None (локальные координаты патча)
+    roi_texts: dict = field(default_factory=dict)      # name -> str ("" если OCR не дал текста)
+
+
 def checkExtContour(ref_contour, cur_contour):
     if ref_contour is None or cur_contour is None:
         return None
     match_value = cv2.matchShapes(ref_contour, cur_contour, cv2.CONTOURS_MATCH_I1, 0.0)
     return match_value <= c.EXT_COUNTUR_MATCH_THRESHOLD
 
+
 def checkROIcontours(ref_rois, cur_rois, multi_roi):
+    """Возвращает (results, contours): results — name->bool|None,
+    contours — name->найденный контур в координатах патча (или None)."""
     results = {}
+    contours = {}
     for name, roi in multi_roi.rois.items():
         ref_patch = ref_rois.get(name)
         cur_patch = cur_rois.get(name)
 
         if ref_patch is None or cur_patch is None:
             results[name] = None          # SKIP
+            contours[name] = None
             continue
         if roi.main_contour is None:
             results[name] = None          # SKIP
+            contours[name] = None
             continue
 
         thr = roi.cont_bin_threshold if roi.cont_bin_threshold is not None \
@@ -38,33 +55,42 @@ def checkROIcontours(ref_rois, cur_rois, multi_roi):
         min_len = roi.min_ext_cont_len if roi.min_ext_cont_len is not None \
                   else c.MIN_ROI_CONTOUR_LENGTH
 
-        contours, _ = ip.extract_contours_from_bgr(cur_patch, thr, min_len)
-        cur_contour = ip.pick_main_contour(contours,
+        roi_contours, _ = ip.extract_contours_from_bgr(cur_patch, thr, min_len)
+        cur_contour = ip.pick_main_contour(roi_contours,
                                            cur_patch.shape[1],
                                            cur_patch.shape[0])
         if cur_contour is None:
             results[name] = None          # SKIP
+            contours[name] = None
             continue
 
         match = cv2.matchShapes(roi.main_contour, cur_contour,
                                 cv2.CONTOURS_MATCH_I1, 0.0)
         results[name] = match <= c.ROI_CONTOUR_MATCH_THRESHOLD
-    return results
+        contours[name] = cur_contour
+    return results, contours
+
 
 def checkROIsymbols(cur_rois, multi_roi, tess_allowlist=c.OCR_TEST_ALLOWLIST):
+    """Возвращает (results, info, texts):
+    results — name->bool|None, info — name->{"expected","recognized"},
+    texts   — name->распознанный текст ("" если не распознан или не участвовал)."""
     if not isinstance(tess_allowlist, str) or tess_allowlist == "":
         raise ValueError("--ERR: checkROIsymbols tess_allowlist must be a non-empty str")
 
     results = {}
     info = {}
+    texts = {}
     for name, roi in multi_roi.rois.items():
         if not roi.OCR_allowlist:
             results[name] = None
+            texts[name] = ""
             continue
 
         cur_patch = cur_rois.get(name)
         if cur_patch is None:
             results[name] = None
+            texts[name] = ""
             continue
 
         thr = roi.ocr_bin_threshold if roi.ocr_bin_threshold is not None \
@@ -76,7 +102,9 @@ def checkROIsymbols(cur_rois, multi_roi, tess_allowlist=c.OCR_TEST_ALLOWLIST):
 
         results[name] = (text != "" and text == roi.OCR_allowlist)
         info[name] = {"expected": roi.OCR_allowlist, "recognized": text}
-    return results, info
+        texts[name] = text
+    return results, info, texts
+
 
 def validate(frame, *, show: bool = True):
     multi_roi = js.read_MultiROI(c.MULTIROI_JSON_PATH, expected_version=2)
@@ -96,6 +124,10 @@ def validate(frame, *, show: bool = True):
             ok=False, stage="ext_contour",
             message="external contour mismatch" if ext_val is False
                     else "external contour unavailable",
+            ext_contour_ok=ext_val,
+            cur_center=cur.center,
+            delta_angle=cur.delta_angle,
+            cur_ext_contour=cur.ext_contour,
         )
         if show: print_result(result)
         return result
@@ -107,10 +139,10 @@ def validate(frame, *, show: bool = True):
     cur_rois = multi_roi.extract_all(frame=cur.bgr_img,
                                      ref_center=cur.center,
                                      delta_angle=cur.delta_angle)
-    roi_vals = checkROIcontours(ref_rois, cur_rois, multi_roi)
+    roi_vals, roi_contours = checkROIcontours(ref_rois, cur_rois, multi_roi)
 
     # --- Stage 3: ROI symbols -------------------------------------------
-    sym_vals, sym_info = checkROIsymbols(cur_rois, multi_roi)
+    sym_vals, sym_info, roi_texts = checkROIsymbols(cur_rois, multi_roi)
 
     failed_cont = [n for n, v in roi_vals.items() if v is False]
     failed_sym  = [n for n, v in sym_vals.items() if v is False]
@@ -123,7 +155,6 @@ def validate(frame, *, show: bool = True):
     elif failed_sym and not failed_cont:
         stage = "roi_symbols"
     else:
-        # упали оба этапа — приоритет отдаём контурам (более ранний этап)
         stage = "roi_contours"
 
     if stage == "ok":
@@ -149,9 +180,16 @@ def validate(frame, *, show: bool = True):
         rois=rois_combined,
         symbols_info=sym_info,
         message=message,
+        ext_contour_ok=ext_val,
+        cur_center=cur.center,
+        delta_angle=cur.delta_angle,
+        cur_ext_contour=cur.ext_contour,
+        roi_contours=roi_contours,
+        roi_texts=roi_texts,
     )
     if show: print_result(result)
     return result
+
 
 def print_result(r: ValidationResult) -> None:
     print("=" * 60)
