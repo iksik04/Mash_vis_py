@@ -3,6 +3,7 @@ import numpy as np
 
 from backend import constants as c
 from backend import img_process as ip
+from backend import ocr
 from backend import json_process as js
 from backend.operation import process as p
 
@@ -143,11 +144,12 @@ def test4():
     cur_rois = multi_roi.extract_all(frame=cur.bgr_img,
                                      ref_center=cur.center,
                                      delta_angle=cur.delta_angle)
-    name = "roi_1"
+    name = "roi_0"
     roi_patch = cur_rois.get(name)
-    prep_img = ip.OCR_imgPreprocess(roi_patch, 75)
 
-    
+    text, prep_img = ocr.getTextFromImg(roi_patch, 75, debug=True)
+
+    print(text)
     cv2.namedWindow(f"ROI {name}")
     cv2.imshow(f"ROI {name}", prep_img)
 
