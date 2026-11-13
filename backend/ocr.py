@@ -2,6 +2,7 @@ import pytesseract
 pytesseract.pytesseract.tesseract_cmd = r"C:\Users\pkirill\AppData\Local\Tesseract-OCR\tesseract.exe"
 
 from . import img_process as ip
+from . import constants as c
 
 _OCR_LANG = "eng"
 _OCR_OEM = 3
@@ -43,7 +44,7 @@ text : str
     Recognized text (whitespace stripped).
 prep_img : np.ndarray  (only when debug=True)
 """
-def getTextFromImg(img, ocr_bin_threshold, allowlist="",
+def getTextFromImg(img, ocr_bin_threshold, allowlist=c.OCR_TEST_ALLOWLIST,
                    lang=_OCR_LANG, psm=_OCR_PSM, oem=_OCR_OEM,
                    min_side=100, debug=False):
     prep_img = ip.OCR_imgPreprocess(img, ocr_bin_threshold,

@@ -158,6 +158,24 @@ def setRefContext(ref_context_output_dir: str = c.REF_CONTEXTS_DIR,
                     json_name=ref_ROI_json_name,
                 )
 
+# --- shared preview scaling (display-only) ---------------------------------
+_PREVIEW_MAX_WIDTH = 1000   # preview is downscaled to <= this width
+
+"""
+Display-only resize: fit width to `_PREVIEW_MAX_WIDTH` when possible, but
+never exceed `c.CAM_HEIGHT` in height. Aspect ratio is preserved.
+Upscales with INTER_CUBIC, downscales with INTER_AREA.
+"""
+def _resize_for_preview(img):
+    h, w = img.shape[:2]
+    s_w = _PREVIEW_MAX_WIDTH / float(w)
+    s_h = float(c.CAM_HEIGHT) / float(h)
+    s = min(s_w, s_h)
+    new_w = max(1, int(round(w * s)))
+    new_h = max(1, int(round(h * s)))
+    interp = cv2.INTER_AREA if s < 1.0 else cv2.INTER_CUBIC
+    return cv2.resize(img, (new_w, new_h), interpolation=interp)
+
 """
 Interactively (re)define the main contour of each ROI and save the result.
 
@@ -227,6 +245,7 @@ def setROIcontours(
                 main_cnt = ip.pick_main_contour(contours, patch.shape[1], patch.shape[0])
 
                 vis = ip._render_roi_contours(bin_img, contours, main_cnt, name, thr, min_len)
+                vis = _resize_for_preview(vis)          # display-only, variant A
                 cv2.imshow(win, vis)
 
                 key = cv2.waitKey(1) & 0xFF
@@ -273,7 +292,6 @@ def setROIcontours(
 
 # --- constants for the OCR-threshold tool ---------------------------------
 _OCR_TEXT_MAX_LEN_ON_IMG = 20     # longer strings go to cmd as "Text in cmd"
-_OCR_PREVIEW_MAX_WIDTH   = 1000   # preview is downscaled to <= this width
 _OCR_FONT_SCALE          = 1.3    # ≈20 px glyph height for HERSHEY_SIMPLEX
 _OCR_FONT_THICKNESS      = 2
 
@@ -281,22 +299,16 @@ _OCR_FONT_THICKNESS      = 2
 Render the OCR-preprocessed patch with the recognized text on top.
 
 This function is DISPLAY-ONLY: it does not feed Tesseract. The patch is
-resized (up or down, aspect ratio preserved) so that its width equals
-`_OCR_PREVIEW_MAX_WIDTH` when possible, and its height stays <=
-`c.CAM_HEIGHT` (protects very tall/narrow ROIs from overflowing the
-screen). The recognized text is painted GREEN in the top-left corner
-as "OCR: <text>" at ~20 px glyph height; when it is too long to fit
-(by length or by rendered width), "OCR: Text in cmd" is painted.
+resized (up or down, aspect ratio preserved) via `_resize_for_preview`
+so that its width equals `_PREVIEW_MAX_WIDTH` when possible, and its
+height stays <= `c.CAM_HEIGHT` (protects very tall/narrow ROIs from
+overflowing the screen). The recognized text is painted GREEN in the
+top-left corner as "OCR: <text>" at ~20 px glyph height; when it is too
+long to fit (by length or by rendered width), "OCR: Text in cmd" is
+painted.
 """
 def _render_ocr_preview(prep_img, text):
-    h, w = prep_img.shape[:2]
-    s_w = _OCR_PREVIEW_MAX_WIDTH / float(w)
-    s_h = float(c.CAM_HEIGHT)    / float(h)
-    s   = min(s_w, s_h)          # up- or downscale, aspect preserved
-    new_w = max(1, int(round(w * s)))
-    new_h = max(1, int(round(h * s)))
-    interp = cv2.INTER_AREA if s < 1.0 else cv2.INTER_CUBIC
-    vis = cv2.resize(prep_img, (new_w, new_h), interpolation=interp)
+    vis = _resize_for_preview(prep_img)
     if vis.ndim == 2:
         vis = cv2.cvtColor(vis, cv2.COLOR_GRAY2BGR)
 

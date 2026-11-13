@@ -3,12 +3,12 @@ from backend.operation import settings
 from backend.operation import process
 
 def main():
-    #frame = process.grab_frame()
+    frame = process.grab_frame()
     #validation.validate(frame)
     #settings.setContourLenghtBinThereshold()
     #settings.setRefContext()
     #settings.setROIcontours() 
-    settings.setROI_OCRbinThereshold() 
+    #settings.setROI_OCRbinThereshold() 
 
 
 if __name__ == "__main__":

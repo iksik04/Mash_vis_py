@@ -146,12 +146,18 @@ def test4():
                                      delta_angle=cur.delta_angle)
     name = "roi_0"
     roi_patch = cur_rois.get(name)
+    filtered = cv2.medianBlur(roi_patch, 3)
 
+    filtered_resized = cv2.resize(filtered, dsize=None,  fx=10, fy=10)
+    resized = cv2.resize(roi_patch, dsize=None,  fx=10, fy=10)
     text, prep_img = ocr.getTextFromImg(roi_patch, 75, debug=True)
 
     print(text)
     cv2.namedWindow(f"ROI {name}")
-    cv2.imshow(f"ROI {name}", prep_img)
+    cv2.imshow(f"ROI {name}", resized)
+
+    cv2.namedWindow(f"Filtered ROI {name}")
+    cv2.imshow(f"Filtered ROI {name}", prep_img)
 
     cv2.waitKey(0)
 
