@@ -126,6 +126,32 @@ def test3():
 
     cv2.waitKey(0)
 
+def test4():
+
+    frame = p.grab_frame()
+
+    multi_roi = js.read_MultiROI(c.MULTIROI_JSON_PATH, expected_version=2)
+
+    cur = ip.CurImgContext(
+        bgr_img=frame,
+        ref_low_threshold=multi_roi.reference.ref_low_threshold,
+        min_ext_contour_length=multi_roi.reference.min_ext_contour_length,
+    )
+    cur.reference = multi_roi.reference
+    cur.build_cur_context()
+
+    cur_rois = multi_roi.extract_all(frame=cur.bgr_img,
+                                     ref_center=cur.center,
+                                     delta_angle=cur.delta_angle)
+    name = "roi_1"
+    roi_patch = cur_rois.get(name)
+    prep_img = ip.OCR_imgPreprocess(roi_patch, 75)
+
+    
+    cv2.namedWindow(f"ROI {name}")
+    cv2.imshow(f"ROI {name}", prep_img)
+
+    cv2.waitKey(0)
 
 if __name__ == "__main__":
-    test3()
+    test4()

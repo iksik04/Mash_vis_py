@@ -268,3 +268,69 @@ def img_sharpen(frame, k):
     #sharpened = cv2.filter2D(frame, -1, kernel)
 
     return sharpened
+
+"""
+Preprocess a BGR image for Tesseract OCR.
+
+Steps:
+  1. BGR -> grayscale (if needed).
+  2. Hard binarization with `ocr_bin_threshold` (cv2.THRESH_BINARY).
+     The threshold must be chosen so that no inversion is required:
+     the text should end up BLACK on WHITE background.
+  3. Auto-upscale small images so the shorter side reaches at least
+     `_OCR_TARGET_MIN_SIDE` px (capped at `_OCR_MAX_SCALE`), preserving
+     aspect ratio. Larger images are left untouched.
+
+Parameters
+----------
+img : np.ndarray
+    Input image (BGR or already grayscale).
+ocr_bin_threshold : int
+    Threshold used for cv2.threshold(..., THRESH_BINARY).
+debug : bool
+    If True, returns (prep_img, debug_imgs) where debug_imgs is a dict
+    with intermediate results: {"gray": ..., "bin": ...}. If False,
+    returns prep_img only.
+
+Returns
+-------
+prep_img : np.ndarray
+    uint8 single-channel image ready for pytesseract.
+debug_imgs : dict  (only when debug=True)
+"""
+_OCR_TARGET_MIN_SIDE = 100
+_OCR_MAX_SCALE = 4.0
+
+def OCR_imgPreprocess(img, ocr_bin_threshold, debug=False):
+    if img is None or img.size == 0:
+        raise ValueError("--ERR: OCR_imgPreprocess img is empty")
+    if not isinstance(ocr_bin_threshold, (int, np.integer)):
+        raise ValueError("--ERR: OCR_imgPreprocess ocr_bin_threshold must be int")
+    ocr_bin_threshold = int(ocr_bin_threshold)
+    if not (0 <= ocr_bin_threshold <= 255):
+        raise ValueError("--ERR: OCR_imgPreprocess ocr_bin_threshold out of [0,255]")
+
+    # 1) grayscale
+    if img.ndim == 2:
+        gray = img
+    else:
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    # 2) hard binarization (no inversion)
+    _, bin_img = cv2.threshold(gray, ocr_bin_threshold, 255, cv2.THRESH_BINARY)
+
+    # 3) auto-upscale small images
+    h, w = bin_img.shape[:2]
+    min_side = min(h, w)
+    if min_side < _OCR_TARGET_MIN_SIDE:
+        scale = min(_OCR_TARGET_MIN_SIDE / float(min_side), _OCR_MAX_SCALE)
+        new_w = max(1, int(round(w * scale)))
+        new_h = max(1, int(round(h * scale)))
+        prep_img = cv2.resize(bin_img, (new_w, new_h),
+                              interpolation=cv2.INTER_CUBIC)
+    else:
+        prep_img = bin_img
+
+    if debug:
+        return prep_img, {"gray": gray, "bin": bin_img}
+    return prep_img
