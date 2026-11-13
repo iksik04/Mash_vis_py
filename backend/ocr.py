@@ -5,7 +5,7 @@ from . import img_process as ip
 
 _OCR_LANG = "eng"
 _OCR_OEM = 3
-_OCR_PSM = 6
+_OCR_PSM = 7
 
 
 """

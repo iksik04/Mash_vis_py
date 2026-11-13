@@ -277,10 +277,6 @@ _OCR_PREVIEW_MAX_WIDTH   = 1000   # preview is downscaled to <= this width
 _OCR_FONT_SCALE          = 1.3    # ≈20 px glyph height for HERSHEY_SIMPLEX
 _OCR_FONT_THICKNESS      = 2
 
-_OCR_TB_PSM_MAX          = 13     # trackbar max for psm
-_OCR_TB_MIN_SIDE_MIN     = 40     # trackbar min for ocr_min_side
-_OCR_TB_MIN_SIDE_MAX     = 300    # trackbar max for ocr_min_side
-
 """
 Render the OCR-preprocessed patch with the recognized text on top.
 
@@ -320,17 +316,18 @@ def _render_ocr_preview(prep_img, text):
 
 
 """
-Interactively tune the OCR binarization threshold (and a few related
-Tesseract / preprocessing parameters) for every ROI in a MultiROI file.
+Interactively tune the OCR binarization threshold for every ROI in a
+MultiROI file.
 
 Workflow (per ROI):
-  - `ocr_bin_threshold` (0..255), `psm` (0..13), `ocr_min_side` (40..300)
-    are controlled by trackbars;
+  - `ocr_bin_threshold` (0..255) is controlled by a trackbar;
   - before the ROI is shown, `allowlist` is asked in the terminal
     (Enter = keep the current value);
-  - live preview : binarized+upscaled patch with the recognized text
-    painted GREEN in the top-left corner (or "Text in cmd" when it does
-    not fit); the full text is always printed to cmd.
+  - live preview : binarized patch with the recognized text painted
+    GREEN in the top-left corner (or "Text in cmd" when it does not
+    fit);
+  - Tesseract is called with fixed psm=`_OCR_PSM` (see the constant's
+    note) and oem=3; neither is exposed in the UI.
 
 Controls:
   - 'n' / Enter / Space  - confirm current ROI
@@ -364,12 +361,9 @@ def setROI_OCRbinThereshold(
 
     win = "Set ROI OCR threshold"
     cv2.namedWindow(win, cv2.WINDOW_AUTOSIZE)
-    cv2.createTrackbar("ocr_bin_threshold", win, 0,   255,                     lambda x: None)
-    cv2.createTrackbar("psm",               win, 6,   _OCR_TB_PSM_MAX,         lambda x: None)
-    cv2.createTrackbar("ocr_min_side",      win, 100,
-                       _OCR_TB_MIN_SIDE_MAX, lambda x: None)
+    cv2.createTrackbar("ocr_bin_threshold", win, 0, 255, lambda x: None)
 
-    pending = {}   # name -> (thr, psm, min_side, allowlist)
+    pending = {}   # name -> (thr, allowlist)
     idx = 0
     try:
         while idx < len(names):
@@ -382,7 +376,7 @@ def setROI_OCRbinThereshold(
                 idx += 1
                 continue
 
-            # ---- allowlist via terminal (B: per-ROI, Enter = keep) --------
+            # ---- allowlist via terminal (Enter = keep) -------------------
             cur_allow = roi.OCR_allowlist or ""
             print(f"--MES: setROI_OCRbinThereshold [{idx+1}/{len(names)}] '{name}'")
             try:
@@ -394,22 +388,12 @@ def setROI_OCRbinThereshold(
             # ---- trackbar init -------------------------------------------
             thr0 = roi.ocr_bin_threshold if roi.ocr_bin_threshold is not None \
                    else ref.ref_low_threshold
-            psm0 = 6
-            min_side0 = 100
             cv2.setTrackbarPos("ocr_bin_threshold", win, int(thr0))
-            cv2.setTrackbarPos("psm",               win, int(psm0))
-            cv2.setTrackbarPos("ocr_min_side",      win,
-                               int(min(max(min_side0, _OCR_TB_MIN_SIDE_MIN),
-                                       _OCR_TB_MIN_SIDE_MAX)))
             cv2.setWindowTitle(win,
                 f"Set ROI OCR threshold [{idx+1}/{len(names)}] {name}")
 
             while True:
-                thr      = cv2.getTrackbarPos("ocr_bin_threshold", win)
-                psm      = cv2.getTrackbarPos("psm",               win)
-                min_side = cv2.getTrackbarPos("ocr_min_side",      win)
-                if min_side < _OCR_TB_MIN_SIDE_MIN:
-                    min_side = _OCR_TB_MIN_SIDE_MIN
+                thr = cv2.getTrackbarPos("ocr_bin_threshold", win)
 
                 # OCR (raises TesseractNotFoundError — propagates on purpose)
                 try:
@@ -417,23 +401,20 @@ def setROI_OCRbinThereshold(
                         patch,
                         ocr_bin_threshold=thr,
                         allowlist=allowlist,
-                        psm=psm,
-                        min_side=min_side,
                         debug=True,
                     )
                 except pytesseract.TesseractNotFoundError:
                     raise
                 except Exception as e:
                     text = f"<OCR error: {e}>"
-                    prep_img = ip.OCR_imgPreprocess(patch, thr,
-                                                    min_side=min_side)
+                    prep_img = ip.OCR_imgPreprocess(patch, thr)
 
                 vis = _render_ocr_preview(prep_img, text)
                 cv2.imshow(win, vis)
 
                 key = cv2.waitKey(1) & 0xFF
                 if key in (ord('n'), 10, 13, 32):
-                    pending[name] = (int(thr), int(psm), int(min_side), allowlist)
+                    pending[name] = (int(thr), allowlist)
                     idx += 1
                     break
                 if key == ord('s'):
@@ -449,12 +430,11 @@ def setROI_OCRbinThereshold(
         cv2.destroyWindow(win)
 
     # apply confirmed changes
-    for name, (thr, psm, min_side, allowlist) in pending.items():
+    for name, (thr, allowlist) in pending.items():
         roi = multi.rois[name]
         roi.ocr_bin_threshold = int(thr)
         roi.OCR_allowlist     = str(allowlist)
-        # psm/min_side are runtime prefs, not stored in the JSON schema —
-        # keep them only in-session (see note below).
+        # psm/oem/min_side are fixed in code, not stored per-ROI.
 
     if not pending:
         print("--MES: setROI_OCRbinThereshold nothing confirmed, file not rewritten")
