@@ -203,7 +203,7 @@ def render_validation_result(frame, result, multi_roi):
 
     # If the outer contour failed, ROIs are not validated -> nothing to draw.
     out = {"main": canvas}
-    if ref_center is None:
+    if result.ext_contour_ok is not True:
         return out
 
     # --- ROI outlines + labels -------------------------------------------

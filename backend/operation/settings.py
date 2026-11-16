@@ -160,6 +160,7 @@ def setRefContext(ref_context_output_dir: str = c.REF_CONTEXTS_DIR,
 
 # --- shared preview scaling (display-only) ---------------------------------
 _PREVIEW_MAX_WIDTH = 1000   # preview is downscaled to <= this width
+_PREVIEW_MAX_HIDTH = c.CAM_HEIGHT/2
 
 """
 Display-only resize: fit width to `_PREVIEW_MAX_WIDTH` when possible, but
@@ -169,7 +170,7 @@ Upscales with INTER_CUBIC, downscales with INTER_AREA.
 def _resize_for_preview(img):
     h, w = img.shape[:2]
     s_w = _PREVIEW_MAX_WIDTH / float(w)
-    s_h = float(c.CAM_HEIGHT) / float(h)
+    s_h = float(_PREVIEW_MAX_HIDTH) / float(h)
     s = min(s_w, s_h)
     new_w = max(1, int(round(w * s)))
     new_h = max(1, int(round(h * s)))
@@ -214,7 +215,7 @@ def setROIcontours(
         return
 
     win = "Set ROI contours"
-    cv2.namedWindow(win, cv2.WINDOW_NORMAL)
+    cv2.namedWindow(win, cv2.WINDOW_AUTOSIZE)
     cv2.createTrackbar("cont_bin_threshold", win, 0, 255, lambda x: None)
     cv2.createTrackbar("min_ext_cont_len", win, 0, c.ROI_CONTOUR_MIN_LEN_RANGE, lambda x: None)
 
