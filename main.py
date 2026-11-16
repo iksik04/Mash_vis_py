@@ -16,7 +16,6 @@ def main():
     #settings.setROIcontours() 
     #settings.setROI_OCRbinThereshold() 
 
-
     multi_roi = js.read_MultiROI(c.MULTIROI_JSON_PATH, expected_version=2)
     result = validation.validate(frame, show=True)
     images = visualize.render_validation_result(frame, result, multi_roi)

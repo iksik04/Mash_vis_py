@@ -6,7 +6,7 @@ from . import constants as c
 
 _OCR_LANG = "eng"
 _OCR_OEM = 3
-_OCR_PSM = 7
+_OCR_PSM = 6
 
 
 """
@@ -46,7 +46,7 @@ prep_img : np.ndarray  (only when debug=True)
 """
 def getTextFromImg(img, ocr_bin_threshold, allowlist=c.OCR_TEST_ALLOWLIST,
                    lang=_OCR_LANG, psm=_OCR_PSM, oem=_OCR_OEM,
-                   min_side=100, debug=False):
+                   min_side=200, debug=False):
     prep_img = ip.OCR_imgPreprocess(img, ocr_bin_threshold,
                                     min_side=min_side, debug=False)
 

@@ -252,7 +252,7 @@ Sharpen `frame` via detail enhancement and an optional unsharp kernel.
 """
 def img_sharpen(frame, k):
 
-    sharpened = cv2.detailEnhance(frame, sigma_s=10, sigma_r=0.15)
+    #sharpened = cv2.detailEnhance(frame, sigma_s=10, sigma_r=0.15)
 
     
     kernel = np.array([[ 0, -k,  0],
@@ -265,7 +265,7 @@ def img_sharpen(frame, k):
                            [-k,  1+9*k, -k],
                            [-k, -k, -k]])
                            '''
-    #sharpened = cv2.filter2D(frame, -1, kernel)
+    sharpened = cv2.filter2D(frame, -1, kernel)
 
     return sharpened
 
@@ -300,7 +300,7 @@ prep_img : np.ndarray
     uint8 single-channel image ready for pytesseract.
 debug_imgs : dict  (only when debug=True)
 """
-_OCR_MAX_SCALE = 4.0
+_OCR_MAX_SCALE = 10.0
 
 def OCR_imgPreprocess(img, ocr_bin_threshold, min_side=100, debug=False):
     if img is None or img.size == 0:
@@ -320,21 +320,22 @@ def OCR_imgPreprocess(img, ocr_bin_threshold, min_side=100, debug=False):
     else:
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    # 2) hard binarization (no inversion)
-    _, bin_img = cv2.threshold(gray, ocr_bin_threshold, 255, cv2.THRESH_BINARY)
-
-    # 3) auto-upscale small images
-    h, w = bin_img.shape[:2]
+    # 2) resize
+    h, w = gray.shape[:2]
     short = min(h, w)
     if short < min_side:
         scale = min(min_side / float(short), _OCR_MAX_SCALE)
         new_w = max(1, int(round(w * scale)))
         new_h = max(1, int(round(h * scale)))
-        prep_img = cv2.resize(bin_img, (new_w, new_h),
-                              interpolation=cv2.INTER_CUBIC)
+        resized = cv2.resize(gray, (new_w, new_h),
+                                interpolation=cv2.INTER_CUBIC)
     else:
-        prep_img = bin_img
+        resized = gray
+
+    h, w = resized.shape[:2]
+    # 2) hard binarization (no inversion)
+    _, bin_img = cv2.threshold(resized, ocr_bin_threshold, 255, cv2.THRESH_BINARY)
 
     if debug:
-        return prep_img, {"gray": gray, "bin": bin_img}
-    return prep_img
+        return bin_img, {"gray": gray, "bin": bin_img}
+    return bin_img

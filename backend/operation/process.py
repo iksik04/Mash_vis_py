@@ -12,7 +12,8 @@ def grab_frame(cam_index: int = c.CAM_INDEX):
     frame = None
     if cap.isOpened():
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, c.CAM_WIDTH)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, c.CAM_HEIGHT)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, c.CAM_HEIGHT) 
+
         ok, frame = cap.read()
         cap.release()
         if ok and frame is not None:
