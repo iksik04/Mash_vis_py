@@ -11,9 +11,9 @@ from ..ocr import getTextFromImg
 @dataclass
 class ValidationResult:
     ok: bool
-    stage: str                    # "ext_contour" | "roi_contours" | "roi_symbols" | "ok"
-    rois: dict = field(default_factory=dict)   # name -> bool|None
-    symbols_info: dict = field(default_factory=dict)  # name -> {"expected": str, "recognized": str}
+    stage: str
+    rois: dict = field(default_factory=dict)
+    symbols_info: dict = field(default_factory=dict)
     message: str = ""
 
     # --- данные для визуализации ---
@@ -21,8 +21,10 @@ class ValidationResult:
     cur_center: tuple | None = None
     delta_angle: float | None = None
     cur_ext_contour: np.ndarray | None = None
-    roi_contours: dict = field(default_factory=dict)   # name -> contour | None (локальные координаты патча)
-    roi_texts: dict = field(default_factory=dict)      # name -> str ("" если OCR не дал текста)
+    roi_contours: dict = field(default_factory=dict)      # name -> contour | None
+    roi_texts: dict = field(default_factory=dict)         # name -> str
+    roi_contour_failed: dict = field(default_factory=dict)  # name -> bool
+    roi_symbols_failed: dict = field(default_factory=dict)  # name -> bool
 
 
 def checkExtContour(ref_contour, cur_contour):
@@ -175,6 +177,9 @@ def validate(frame, *, show: bool = True):
         else:
             rois_combined[name] = None
 
+    roi_contour_failed = {n: (v is False) for n, v in roi_vals.items()}
+    roi_symbols_failed = {n: (v is False) for n, v in sym_vals.items()}
+
     result = ValidationResult(
         ok=ok, stage=stage,
         rois=rois_combined,
@@ -186,6 +191,8 @@ def validate(frame, *, show: bool = True):
         cur_ext_contour=cur.ext_contour,
         roi_contours=roi_contours,
         roi_texts=roi_texts,
+        roi_contour_failed = roi_contour_failed,
+        roi_symbols_failed = roi_symbols_failed
     )
     if show: print_result(result)
     return result
