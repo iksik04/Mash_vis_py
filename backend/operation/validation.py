@@ -108,8 +108,7 @@ def checkROIsymbols(cur_rois, multi_roi, tess_allowlist=c.OCR_TEST_ALLOWLIST):
     return results, info, texts
 
 
-def validate(frame, *, show: bool = True):
-    multi_roi = js.read_MultiROI(c.MULTIROI_JSON_PATH, expected_version=2)
+def validate(frame, multi_roi):
 
     cur = ip.CurImgContext(
         bgr_img=frame,
@@ -131,7 +130,6 @@ def validate(frame, *, show: bool = True):
             delta_angle=cur.delta_angle,
             cur_ext_contour=cur.ext_contour,
         )
-        if show: print_result(result)
         return result
 
     # --- Stage 2: ROI contours ------------------------------------------
@@ -166,7 +164,6 @@ def validate(frame, *, show: bool = True):
     else:  # roi_symbols
         message = f"failed ROIs (symbols): {', '.join(failed_sym)}"
 
-    # объединённая карта name -> bool|None по обоим этапам
     rois_combined = {}
     for name in multi_roi.rois:
         vals = [d.get(name) for d in (roi_vals, sym_vals)]
@@ -194,7 +191,6 @@ def validate(frame, *, show: bool = True):
         roi_contour_failed = roi_contour_failed,
         roi_symbols_failed = roi_symbols_failed
     )
-    if show: print_result(result)
     return result
 
 

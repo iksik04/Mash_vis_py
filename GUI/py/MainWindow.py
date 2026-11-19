@@ -6,6 +6,7 @@ from PySide6.QtGui import QImage, QPixmap
 import cv2
 
 from backend import constants as c
+from backend import json_process as js
 from backend.operation import validation
 
 
@@ -18,14 +19,17 @@ class MainWindow(QMainWindow):
         # status variables
         self.is_live = True
 
+        self.cap = cv2.VideoCapture(c.CAM_INDEX)
+
+        self.cap_setup
+
         # update frame by timer 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_frame)
         self.timer.start(30) # 30 FPS
 
-    def cup_setup(self):
+    def cap_setup(self):
         '''Connect to cap and set settings'''
-        self.cap = cv2.VideoCapture(c.CAM_INDEX)
         if self.cap.isOpened():
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, c.CAM_WIDTH)
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, c.CAM_HEIGHT)
@@ -64,7 +68,9 @@ class MainWindow(QMainWindow):
             return
         ok, frame = self.cap.read()
         if ok and frame is not None:
-            validation.validate(frame)
+            multi_roi = js.read_MultiROI(c.MULTIROI_JSON_PATH)
+            result = validation.validate(frame, multi_roi)
+            validation.print_result(result)
 
     def on_btn_clear_clicked(self):
         self.ui.text_log.clear()
