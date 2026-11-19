@@ -6,6 +6,7 @@ from PySide6.QtGui import QImage, QPixmap
 import cv2
 
 from backend import constants as c
+from backend.operation import validation
 
 
 class MainWindow(QMainWindow):
@@ -14,19 +15,23 @@ class MainWindow(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-        self.current_frame = None
+        # status variables
         self.is_live = True
 
+        # update frame by timer 
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_frame)
+        self.timer.start(30) # 30 FPS
+
+    def cup_setup(self):
+        '''Connect to cap and set settings'''
         self.cap = cv2.VideoCapture(c.CAM_INDEX)
         if self.cap.isOpened():
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, c.CAM_WIDTH)
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, c.CAM_HEIGHT)
         else:
             self.ui.text_log.appendPlainText("Ошибка: не удалось подключиться к камере.")
-        
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.update_frame)
-        self.timer.start(30)
+
 
     def update_frame(self):
         """Capture frame from cap, shows it if is_live"""
@@ -35,7 +40,6 @@ class MainWindow(QMainWindow):
 
         ok, frame = self.cap.read()
         if ok and frame is not None:
-            self.current_frame = frame
             self.display_image(frame)
 
     def display_image(self, bgr_img):
@@ -54,7 +58,13 @@ class MainWindow(QMainWindow):
         self.ui.label_image.setPixmap(scaled_pixmap)
 
     def on_btn_run_clicked(self):
-        pass
+        self.is_live = False
+
+        if not self.cap.isOpened():
+            return
+        ok, frame = self.cap.read()
+        if ok and frame is not None:
+            validation.validate(frame)
 
     def on_btn_clear_clicked(self):
         self.ui.text_log.clear()
