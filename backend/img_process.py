@@ -189,6 +189,12 @@ def extract_main_contour(bgr_img, low_threshold, min_length):
 
     _, bin_img = cv2.threshold(gray_img, low_threshold, 255, cv2.THRESH_BINARY)
 
+    '''# DEBAG
+    cv2.namedWindow("DEBAG1")
+    cv2.namedWindow("DEBAG2")
+    cv2.imshow("DEBAG1", gray_img)
+    cv2.imshow("DEBAG2", bin_img)'''
+
     contours, _ = cv2.findContours(bin_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     filtered_contours = [
         cnt for cnt in contours
