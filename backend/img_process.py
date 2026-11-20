@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
 from dataclasses import dataclass
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QImage, QPixmap
 
 from . import geometry
 from . import constants as c
@@ -345,3 +347,40 @@ def OCR_imgPreprocess(img, ocr_bin_threshold, min_side=100, debug=False):
     if debug:
         return bin_img, {"gray": gray, "bin": bin_img}
     return bin_img
+
+def cv2qt_img(frame: np.ndarray) -> QPixmap:
+    """Convert a cv2 image (BGR / grayscale / binarized) to QPixmap.
+
+    - ndim == 3 : treated as BGR (cv2 default), converted to RGB.
+    - ndim == 2 : treated as grayscale (incl. binarized), Format_Grayscale8.
+    Data is copied so the QImage does not depend on the numpy buffer lifetime.
+    """
+    if frame is None or frame.size == 0:
+        raise ValueError("--ERR: cv2qt_img frame is empty")
+
+    if frame.ndim == 2:
+        h, w = frame.shape
+        qt_img = QImage(frame.data, w, h, frame.strides[0],
+                        QImage.Format.Format_Grayscale8).copy()
+    elif frame.ndim == 3 and frame.shape[2] == 3:
+        rgb_img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        h, w, ch = rgb_img.shape
+        bytes_per_line = ch * w
+        qt_img = QImage(rgb_img.data, w, h, bytes_per_line,
+                        QImage.Format.Format_RGB888).copy()
+    else:
+        raise ValueError(
+            f"--ERR: cv2qt_img unsupported shape {frame.shape} "
+            f"(expected (H,W) or (H,W,3))"
+        )
+
+    return QPixmap.fromImage(qt_img)
+
+
+def scale_pixmap(pixmap: QPixmap, size) -> QPixmap:
+    """Scale pixmap to fit `size` keeping aspect ratio (smooth)."""
+    return pixmap.scaled(
+        size,
+        Qt.AspectRatioMode.KeepAspectRatio,
+        Qt.TransformationMode.SmoothTransformation,
+    )

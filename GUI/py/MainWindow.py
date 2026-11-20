@@ -1,12 +1,12 @@
-from PySide6.QtWidgets import QMainWindow, QDialog, QLabel, QVBoxLayout, QScrollArea, QWidget
-from GUI.Qt.mainWind import Ui_MainWindow
-from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QImage, QPixmap
+from PySide6.QtWidgets import QMainWindow, QDialog, QLabel, QVBoxLayout
+from PySide6.QtCore import Qt, Slot
 
-import cv2
+from GUI.Qt.mainWind import Ui_MainWindow
 
 from backend import constants as c
 from backend import json_process as js
+from backend import img_process as ip
+from backend.workers.camera_worker import CameraWorker
 from backend.operation import validation, visualize
 
 
@@ -16,56 +16,31 @@ class MainWindow(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-        # status variables
-        self.is_live = True
+        self._fail_windows = []
+        self._show_live = True
 
-        self.cap = cv2.VideoCapture(c.CAM_INDEX)
+        self.camera = CameraWorker(parent=self)
+        self.camera.frame_ready.connect(self._on_frame_ready)
+        self.camera.error.connect(self._on_camera_error)
+        self.camera.start()
 
-        self.cap_setup
-
-        if self.is_live:
-            # update frame by timer 
-            self.timer = QTimer(self)
-            self.timer.timeout.connect(self.update_frame)
-            self.timer.start(30) # 30 FPS
-
-    def cap_setup(self):
-        '''Connect to cap and set settings'''
-        if self.cap.isOpened():
-            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, c.CAM_WIDTH)
-            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, c.CAM_HEIGHT)
-        else:
-            self.ui.text_log.appendPlainText("Ошибка: не удалось подключиться к камере.")
-
-
-    def update_frame(self):
-        """Capture frame from cap, shows it if is_live"""
-        if not self.cap.isOpened():
+    @Slot(object)
+    def _on_frame_ready(self, frame):
+        if not self._show_live:
             return
-
-        ok, frame = self.cap.read()
-        if ok and frame is not None:
-            self.display_image(frame)
-
-    def display_image(self, bgr_img):
-        """Convert BGR OpenCV to QPixmap and rescale for QLabel."""
-        rgb_img = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2RGB)
-        h, w, ch = rgb_img.shape
-        bytes_per_line = ch * w
-        qt_img = QImage(rgb_img.data, w, h, bytes_per_line, QImage.Format.Format_RGB888)
-        
-        pixmap = QPixmap.fromImage(qt_img)
-        scaled_pixmap = pixmap.scaled(
-            self.ui.label_image.size(),
-            Qt.AspectRatioMode.KeepAspectRatio,
-            Qt.TransformationMode.SmoothTransformation
+        pixmap = ip.cv2qt_img(frame)
+        self.ui.label_image.setPixmap(
+            ip.scale_pixmap(pixmap, self.ui.label_image.size())
         )
-        self.ui.label_image.setPixmap(scaled_pixmap)
+
+    @Slot(str)
+    def _on_camera_error(self, msg: str):
+        self.ui.text_log.appendPlainText(msg)
 
     def show_validation_result(self, images, result=None):
         """Shows validation result GUI.
 
-        - images["main"]  ->  label_image (display_image)
+        - images["main"]   -> label_image
         - images["fail:*"] -> in separate windows
         """
         if not images:
@@ -73,7 +48,11 @@ class MainWindow(QMainWindow):
 
         main_img = images.get("main")
         if main_img is not None:
-            self.display_image(main_img)
+            self.ui.label_image.setPixmap(
+                ip.scale_pixmap(
+                    ip.cv2qt_img(main_img), self.ui.label_image.size()
+                )
+            )
 
         self._close_fail_windows()
 
@@ -86,16 +65,10 @@ class MainWindow(QMainWindow):
             self._show_fail_window(title, img)
 
     def _show_fail_window(self, title, bgr_img):
-        """Creates separate window for NG ROI."""
-        rgb_img = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2RGB)
-        h, w, ch = rgb_img.shape
-        bytes_per_line = ch * w
-        qt_img = QImage(rgb_img.data, w, h, bytes_per_line,
-                        QImage.Format.Format_RGB888).copy()
-
+        """Creates a separate window for an NG ROI."""
         label = QLabel()
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        label.setPixmap(QPixmap.fromImage(qt_img))
+        label.setPixmap(ip.cv2qt_img(bgr_img))
 
         dlg = QDialog(self)
         dlg.setWindowTitle(title)
@@ -106,7 +79,7 @@ class MainWindow(QMainWindow):
         dlg.show()
 
         self._fail_windows.append(dlg)
-        dlg.finished.connect(lambda _=0, d=dlg: self._forget_fail_window(d))
+        dlg.finished.connect(lambda _result, d=dlg: self._forget_fail_window(d))
 
     def _forget_fail_window(self, dlg):
         if dlg in self._fail_windows:
@@ -118,23 +91,31 @@ class MainWindow(QMainWindow):
                 dlg.close()
             except RuntimeError:
                 pass
-        self._fail_windows.clear()
+            self._forget_fail_window(dlg)
 
     def on_btn_clear_clicked(self):
         self.ui.text_log.clear()
         self._close_fail_windows()
+        self._show_live = True 
 
     def on_btn_run_clicked(self):
-        self.is_live = False
-
-        if not self.cap.isOpened():
+        frame = self.camera.last_frame
+        if frame is None:
+            self.ui.text_log.appendPlainText("Error: no frame available from the camera.")
             return
-        ok, frame = self.cap.read()
-        if ok and frame is not None:
+
+        try:
             multi_roi = js.read_MultiROI(c.MULTIROI_JSON_PATH)
             result = validation.validate(frame, multi_roi)
             canvases = visualize.render_validation_result(frame, result, multi_roi)
-            self.show_validation_result(canvases, result)
+        except Exception as e:
+            self.ui.text_log.appendPlainText(f"Validation error: {e}")
+            return
 
-    def on_btn_clear_clicked(self):
-        self.ui.text_log.clear()
+        self._show_live = False         # freeze live feed, keep result on screen
+        self.show_validation_result(canvases, result)
+
+    def closeEvent(self, event):
+        self.camera.stop()
+        self._close_fail_windows()
+        super().closeEvent(event)
