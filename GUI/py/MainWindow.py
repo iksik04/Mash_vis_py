@@ -16,7 +16,6 @@ class MainWindow(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-        self._fail_windows = []
         self._show_live = True
 
         self.camera = CameraWorker(parent=self)
@@ -37,12 +36,8 @@ class MainWindow(QMainWindow):
     def _on_camera_error(self, msg: str):
         self.ui.text_log.appendPlainText(msg)
 
-    def show_validation_result(self, images, result=None):
-        """Shows validation result GUI.
-
-        - images["main"]   -> label_image
-        - images["fail:*"] -> in separate windows
-        """
+    def show_validation_result(self, images):
+        """Shows validation result GUI.        """
         if not images:
             return
 
@@ -54,48 +49,8 @@ class MainWindow(QMainWindow):
                 )
             )
 
-        self._close_fail_windows()
-
-        for key, img in images.items():
-            if not key.startswith("fail:"):
-                continue
-            name = key[len("fail:"):]
-            stage = visualize._stage_label(result, name) if result is not None else "unknown"
-            title = f"Validation fail: {stage}, {name}"
-            self._show_fail_window(title, img)
-
-    def _show_fail_window(self, title, bgr_img):
-        """Creates a separate window for an NG ROI."""
-        label = QLabel()
-        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        label.setPixmap(ip.cv2qt_img(bgr_img))
-
-        dlg = QDialog(self)
-        dlg.setWindowTitle(title)
-        dlg.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
-        layout = QVBoxLayout(dlg)
-        layout.addWidget(label)
-        dlg.adjustSize()
-        dlg.show()
-
-        self._fail_windows.append(dlg)
-        dlg.finished.connect(lambda _result, d=dlg: self._forget_fail_window(d))
-
-    def _forget_fail_window(self, dlg):
-        if dlg in self._fail_windows:
-            self._fail_windows.remove(dlg)
-
-    def _close_fail_windows(self):
-        for dlg in list(self._fail_windows):
-            try:
-                dlg.close()
-            except RuntimeError:
-                pass
-            self._forget_fail_window(dlg)
-
     def on_btn_clear_clicked(self):
         self.ui.text_log.clear()
-        self._close_fail_windows()
         self._show_live = True 
 
     def on_btn_run_clicked(self):
