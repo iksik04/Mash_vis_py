@@ -4,7 +4,6 @@ from dataclasses import dataclass, field
 
 from .. import constants as c
 from .. import img_process as ip
-from .. import json_process as js
 from ..ocr import getTextFromImg
 
 
@@ -16,7 +15,7 @@ class ValidationResult:
     symbols_info: dict = field(default_factory=dict)
     message: str = ""
 
-    # --- данные для визуализации ---
+    # --- visualization data ---
     ext_contour_ok: bool | None = None
     cur_center: tuple | None = None
     delta_angle: float | None = None
@@ -35,8 +34,8 @@ def checkExtContour(ref_contour, cur_contour):
 
 
 def checkROIcontours(ref_rois, cur_rois, multi_roi):
-    """Возвращает (results, contours): results — name->bool|None,
-    contours — name->найденный контур в координатах патча (или None)."""
+    """Returns (results, contours): results — name->bool|None,
+    contours — name->found contour in patch coordinates (or None)."""
     results = {}
     contours = {}
     for name, roi in multi_roi.rois.items():
@@ -74,9 +73,9 @@ def checkROIcontours(ref_rois, cur_rois, multi_roi):
 
 
 def checkROIsymbols(cur_rois, multi_roi, tess_allowlist=c.OCR_TEST_ALLOWLIST):
-    """Возвращает (results, info, texts):
+    """Returns (results, info, texts):
     results — name->bool|None, info — name->{"expected","recognized"},
-    texts   — name->распознанный текст ("" если не распознан или не участвовал)."""
+    texts   — name->recognized text ("" if unrecognized or not used)."""
     if not isinstance(tess_allowlist, str) or tess_allowlist == "":
         raise ValueError("--ERR: checkROIsymbols tess_allowlist must be a non-empty str")
 
@@ -194,26 +193,30 @@ def validate(frame, multi_roi):
     return result
 
 
-def print_result(r: ValidationResult) -> None:
-    print("=" * 60)
+def format_result(r: ValidationResult) -> str:
+    """Return the validation report as a string suitable for
+    `ui.text_log.appendPlainText(...)`."""
+    lines = ["=" * 60]
     if r.ok:
-        print("--VAL OVERALL --OK")
-        return
+        lines.append("--VAL OVERALL --OK")
+        lines.append("=" * 60)
+        return "\n".join(lines)
 
-    print(f"--VAL OVERALL --NG  (stage: {r.stage})")
+    lines.append(f"--VAL OVERALL --NG  (stage: {r.stage})")
     if r.stage == "ext_contour":
-        print(f"       {r.message}")
-        print("=" * 60)
-        return
+        lines.append(f"       {r.message}")
+        lines.append("=" * 60)
+        return "\n".join(lines)
 
     for name, v in r.rois.items():
         if v is False and name in r.symbols_info:
             exp = r.symbols_info[name]["expected"]
             rec = r.symbols_info[name]["recognized"]
-            print(f"       ROI '{name}' --NG expected '{exp}', recognized '{rec}'")
+            lines.append(f"       ROI '{name}' --NG expected '{exp}', recognized '{rec}'")
         else:
             tag = "--OK" if v is True else "--NG" if v is False else "--SKIP"
-            print(f"       ROI '{name}' {tag}")
+            lines.append(f"       ROI '{name}' {tag}")
     if r.message:
-        print(f"       {r.message}")
-    print("=" * 60)
+        lines.append(f"       {r.message}")
+    lines.append("=" * 60)
+    return "\n".join(lines)

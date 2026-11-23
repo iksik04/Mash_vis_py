@@ -1,5 +1,5 @@
-from PySide6.QtWidgets import QMainWindow, QDialog, QLabel, QVBoxLayout
-from PySide6.QtCore import Qt, Slot
+from PySide6.QtWidgets import QMainWindow
+from PySide6.QtCore import Slot
 
 from GUI.Qt.mainWind import Ui_MainWindow
 
@@ -22,6 +22,9 @@ class MainWindow(QMainWindow):
         self.camera.frame_ready.connect(self._on_frame_ready)
         self.camera.error.connect(self._on_camera_error)
         self.camera.start()
+
+        self.ui.btn_run.clicked.connect(self.on_btn_run_clicked)
+        self.ui.btn_clear.clicked.connect(self.on_btn_clear_clicked)
 
     @Slot(object)
     def _on_frame_ready(self, frame):
@@ -63,14 +66,15 @@ class MainWindow(QMainWindow):
             multi_roi = js.read_MultiROI(c.MULTIROI_JSON_PATH)
             result = validation.validate(frame, multi_roi)
             canvases = visualize.render_validation_result(frame, result, multi_roi)
+            self._show_live = False         # freeze live feed, keep result on screen
+            self.show_validation_result(canvases)
+            validation_text = validation.format_result(result)
+            self.ui.text_log.appendPlainText(validation_text)
+
         except Exception as e:
             self.ui.text_log.appendPlainText(f"Validation error: {e}")
             return
 
-        self._show_live = False         # freeze live feed, keep result on screen
-        self.show_validation_result(canvases, result)
-
     def closeEvent(self, event):
         self.camera.stop()
-        self._close_fail_windows()
         super().closeEvent(event)

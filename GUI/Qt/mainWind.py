@@ -87,8 +87,6 @@ class Ui_MainWindow(object):
         MainWindow.setStatusBar(self.statusbar)
 
         self.retranslateUi(MainWindow)
-        self.btn_run.clicked.connect(MainWindow.on_btn_run_clicked)
-        self.btn_clear.clicked.connect(MainWindow.on_btn_clear_clicked)
 
         QMetaObject.connectSlotsByName(MainWindow)
     # setupUi
