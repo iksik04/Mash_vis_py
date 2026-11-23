@@ -87,7 +87,6 @@ class MainWindow(QMainWindow):
                 self.add_scroll_image(ip.cv2qt_img(img))
 
     def on_btn_clear_clicked(self):
-        self.ui.text_log.clear()
         self.clear_scroll_images()
         self._show_live = True 
 
