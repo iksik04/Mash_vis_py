@@ -1,5 +1,6 @@
-from PySide6.QtWidgets import QMainWindow
-from PySide6.QtCore import Slot
+from PySide6.QtWidgets import QMainWindow, QLabel
+from PySide6.QtCore import Slot, Qt
+from PySide6.QtGui import QPixmap
 
 from GUI.Qt.mainWind import Ui_MainWindow
 
@@ -39,6 +40,34 @@ class MainWindow(QMainWindow):
     def _on_camera_error(self, msg: str):
         self.ui.text_log.appendPlainText(msg)
 
+    def clear_scroll_images(self):
+        """clears all images from scroll"""
+        layout = self.ui.verticalLayout
+
+        while layout.count() > 1:
+            item = layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+            del item
+
+    def add_scroll_image(self, pixmap: QPixmap):
+        """add image to the right scroll panel"""
+        if pixmap.isNull():
+            return
+
+        label = QLabel(self.ui.scrollAreaWidgetContents)
+        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+
+        scaled_pixmap = pixmap.scaledToWidth(
+            290, Qt.TransformationMode.SmoothTransformation
+        )
+        label.setPixmap(scaled_pixmap)
+        
+        self.ui.verticalLayout.insertWidget(
+            self.ui.verticalLayout.count() - 1, label
+        )
+
     def show_validation_result(self, images):
         """Shows validation result GUI.        """
         if not images:
@@ -52,8 +81,14 @@ class MainWindow(QMainWindow):
                 )
             )
 
+        self.clear_scroll_images()
+        for key, img in images.items():
+            if key.startswith("fail:") and img is not None:
+                self.add_scroll_image(ip.cv2qt_img(img))
+
     def on_btn_clear_clicked(self):
         self.ui.text_log.clear()
+        self.clear_scroll_images()
         self._show_live = True 
 
     def on_btn_run_clicked(self):
