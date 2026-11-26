@@ -16,15 +16,15 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QButtonGroup, QHBoxLayout, QLabel,
-    QMainWindow, QPlainTextEdit, QPushButton, QSizePolicy,
-    QSpacerItem, QSplitter, QStackedWidget, QVBoxLayout,
-    QWidget)
+    QLineEdit, QMainWindow, QPlainTextEdit, QPushButton,
+    QSizePolicy, QSpacerItem, QSplitter, QStackedWidget,
+    QVBoxLayout, QWidget)
 
 class Ui_Form(object):
     def setupUi(self, Form):
         if not Form.objectName():
             Form.setObjectName(u"Form")
-        Form.resize(1920, 1080)
+        Form.resize(1740, 1080)
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -174,6 +174,191 @@ class Ui_Form(object):
         self.RefContext_ROI_stacked.setMaximumSize(QSize(1000, 16777215))
         self.RefContext_page = QWidget()
         self.RefContext_page.setObjectName(u"RefContext_page")
+        self.verticalLayout_6 = QVBoxLayout(self.RefContext_page)
+        self.verticalLayout_6.setSpacing(0)
+        self.verticalLayout_6.setObjectName(u"verticalLayout_6")
+        self.verticalLayout_6.setContentsMargins(0, 0, 0, 0)
+        self.RefContext_settings_bar = QWidget(self.RefContext_page)
+        self.RefContext_settings_bar.setObjectName(u"RefContext_settings_bar")
+        sizePolicy6.setHeightForWidth(self.RefContext_settings_bar.sizePolicy().hasHeightForWidth())
+        self.RefContext_settings_bar.setSizePolicy(sizePolicy6)
+        self.RefContext_settings_bar.setMaximumSize(QSize(16777215, 50))
+        self.RefContext_settings_bar.setStyleSheet(u"background-color:  rgb(189, 189, 189);")
+        self.horizontalLayout_2 = QHBoxLayout(self.RefContext_settings_bar)
+        self.horizontalLayout_2.setSpacing(0)
+        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
+        self.horizontalLayout_2.setContentsMargins(0, 0, 0, 0)
+        self.loadRefContext_btn = QPushButton(self.RefContext_settings_bar)
+        self.loadRefContext_btn.setObjectName(u"loadRefContext_btn")
+        sizePolicy5.setHeightForWidth(self.loadRefContext_btn.sizePolicy().hasHeightForWidth())
+        self.loadRefContext_btn.setSizePolicy(sizePolicy5)
+        self.loadRefContext_btn.setMinimumSize(QSize(50, 0))
+        self.loadRefContext_btn.setMaximumSize(QSize(50, 16777215))
+        icon = QIcon(QIcon.fromTheme(QIcon.ThemeIcon.EditFind))
+        self.loadRefContext_btn.setIcon(icon)
+        self.loadRefContext_btn.setIconSize(QSize(30, 30))
+
+        self.horizontalLayout_2.addWidget(self.loadRefContext_btn)
+
+        self.saveRefContext_btn = QPushButton(self.RefContext_settings_bar)
+        self.saveRefContext_btn.setObjectName(u"saveRefContext_btn")
+        sizePolicy5.setHeightForWidth(self.saveRefContext_btn.sizePolicy().hasHeightForWidth())
+        self.saveRefContext_btn.setSizePolicy(sizePolicy5)
+        self.saveRefContext_btn.setMinimumSize(QSize(50, 0))
+        self.saveRefContext_btn.setMaximumSize(QSize(50, 16777215))
+        icon1 = QIcon(QIcon.fromTheme(QIcon.ThemeIcon.DocumentSave))
+        self.saveRefContext_btn.setIcon(icon1)
+        self.saveRefContext_btn.setIconSize(QSize(30, 30))
+
+        self.horizontalLayout_2.addWidget(self.saveRefContext_btn)
+
+        self.horizontalSpacer_4 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_2.addItem(self.horizontalSpacer_4)
+
+
+        self.verticalLayout_6.addWidget(self.RefContext_settings_bar)
+
+        self.widget_2 = QWidget(self.RefContext_page)
+        self.widget_2.setObjectName(u"widget_2")
+        sizePolicy4.setHeightForWidth(self.widget_2.sizePolicy().hasHeightForWidth())
+        self.widget_2.setSizePolicy(sizePolicy4)
+        self.widget_2.setMinimumSize(QSize(0, 50))
+        self.widget_2.setMaximumSize(QSize(16777215, 50))
+        self.horizontalLayout_6 = QHBoxLayout(self.widget_2)
+        self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
+        self.label_3 = QLabel(self.widget_2)
+        self.label_3.setObjectName(u"label_3")
+
+        self.horizontalLayout_6.addWidget(self.label_3)
+
+        self.RefContext_filename_edit = QLineEdit(self.widget_2)
+        self.RefContext_filename_edit.setObjectName(u"RefContext_filename_edit")
+
+        self.horizontalLayout_6.addWidget(self.RefContext_filename_edit)
+
+
+        self.verticalLayout_6.addWidget(self.widget_2)
+
+        self.widget_4 = QWidget(self.RefContext_page)
+        self.widget_4.setObjectName(u"widget_4")
+        sizePolicy4.setHeightForWidth(self.widget_4.sizePolicy().hasHeightForWidth())
+        self.widget_4.setSizePolicy(sizePolicy4)
+        self.widget_4.setMinimumSize(QSize(0, 50))
+        self.widget_4.setMaximumSize(QSize(16777215, 50))
+        self.horizontalLayout_7 = QHBoxLayout(self.widget_4)
+        self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
+        self.label_4 = QLabel(self.widget_4)
+        self.label_4.setObjectName(u"label_4")
+
+        self.horizontalLayout_7.addWidget(self.label_4)
+
+        self.Ref_img_name_edit = QLineEdit(self.widget_4)
+        self.Ref_img_name_edit.setObjectName(u"Ref_img_name_edit")
+
+        self.horizontalLayout_7.addWidget(self.Ref_img_name_edit)
+
+
+        self.verticalLayout_6.addWidget(self.widget_4)
+
+        self.widget_5 = QWidget(self.RefContext_page)
+        self.widget_5.setObjectName(u"widget_5")
+        sizePolicy4.setHeightForWidth(self.widget_5.sizePolicy().hasHeightForWidth())
+        self.widget_5.setSizePolicy(sizePolicy4)
+        self.widget_5.setMinimumSize(QSize(0, 50))
+        self.widget_5.setMaximumSize(QSize(16777215, 50))
+        self.horizontalLayout_8 = QHBoxLayout(self.widget_5)
+        self.horizontalLayout_8.setObjectName(u"horizontalLayout_8")
+        self.label_5 = QLabel(self.widget_5)
+        self.label_5.setObjectName(u"label_5")
+
+        self.horizontalLayout_8.addWidget(self.label_5)
+
+        self.Ref_bin_img_name_edit = QLineEdit(self.widget_5)
+        self.Ref_bin_img_name_edit.setObjectName(u"Ref_bin_img_name_edit")
+
+        self.horizontalLayout_8.addWidget(self.Ref_bin_img_name_edit)
+
+
+        self.verticalLayout_6.addWidget(self.widget_5)
+
+        self.widget_6 = QWidget(self.RefContext_page)
+        self.widget_6.setObjectName(u"widget_6")
+        sizePolicy4.setHeightForWidth(self.widget_6.sizePolicy().hasHeightForWidth())
+        self.widget_6.setSizePolicy(sizePolicy4)
+        self.widget_6.setMinimumSize(QSize(0, 50))
+        self.widget_6.setMaximumSize(QSize(16777215, 50))
+        self.horizontalLayout_9 = QHBoxLayout(self.widget_6)
+        self.horizontalLayout_9.setObjectName(u"horizontalLayout_9")
+        self.select_RefContext_params_btn = QPushButton(self.widget_6)
+        self.select_RefContext_params_btn.setObjectName(u"select_RefContext_params_btn")
+        sizePolicy7 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        sizePolicy7.setHorizontalStretch(0)
+        sizePolicy7.setVerticalStretch(0)
+        sizePolicy7.setHeightForWidth(self.select_RefContext_params_btn.sizePolicy().hasHeightForWidth())
+        self.select_RefContext_params_btn.setSizePolicy(sizePolicy7)
+        self.select_RefContext_params_btn.setMinimumSize(QSize(20, 20))
+        self.select_RefContext_params_btn.setMaximumSize(QSize(20, 20))
+        icon2 = QIcon(QIcon.fromTheme(QIcon.ThemeIcon.DocumentProperties))
+        self.select_RefContext_params_btn.setIcon(icon2)
+        self.select_RefContext_params_btn.setIconSize(QSize(10, 10))
+
+        self.horizontalLayout_9.addWidget(self.select_RefContext_params_btn)
+
+        self.label_6 = QLabel(self.widget_6)
+        self.label_6.setObjectName(u"label_6")
+
+        self.horizontalLayout_9.addWidget(self.label_6)
+
+
+        self.verticalLayout_6.addWidget(self.widget_6)
+
+        self.widget_7 = QWidget(self.RefContext_page)
+        self.widget_7.setObjectName(u"widget_7")
+        sizePolicy4.setHeightForWidth(self.widget_7.sizePolicy().hasHeightForWidth())
+        self.widget_7.setSizePolicy(sizePolicy4)
+        self.widget_7.setMinimumSize(QSize(0, 50))
+        self.widget_7.setMaximumSize(QSize(16777215, 50))
+        self.horizontalLayout_10 = QHBoxLayout(self.widget_7)
+        self.horizontalLayout_10.setObjectName(u"horizontalLayout_10")
+        self.label_7 = QLabel(self.widget_7)
+        self.label_7.setObjectName(u"label_7")
+
+        self.horizontalLayout_10.addWidget(self.label_7)
+
+        self.Ref_context_bin_thereshold_edit = QLineEdit(self.widget_7)
+        self.Ref_context_bin_thereshold_edit.setObjectName(u"Ref_context_bin_thereshold_edit")
+
+        self.horizontalLayout_10.addWidget(self.Ref_context_bin_thereshold_edit)
+
+
+        self.verticalLayout_6.addWidget(self.widget_7)
+
+        self.widget_8 = QWidget(self.RefContext_page)
+        self.widget_8.setObjectName(u"widget_8")
+        sizePolicy4.setHeightForWidth(self.widget_8.sizePolicy().hasHeightForWidth())
+        self.widget_8.setSizePolicy(sizePolicy4)
+        self.widget_8.setMinimumSize(QSize(0, 50))
+        self.widget_8.setMaximumSize(QSize(16777215, 50))
+        self.horizontalLayout_11 = QHBoxLayout(self.widget_8)
+        self.horizontalLayout_11.setObjectName(u"horizontalLayout_11")
+        self.label_8 = QLabel(self.widget_8)
+        self.label_8.setObjectName(u"label_8")
+
+        self.horizontalLayout_11.addWidget(self.label_8)
+
+        self.RefContext_min_contour_length_edit = QLineEdit(self.widget_8)
+        self.RefContext_min_contour_length_edit.setObjectName(u"RefContext_min_contour_length_edit")
+
+        self.horizontalLayout_11.addWidget(self.RefContext_min_contour_length_edit)
+
+
+        self.verticalLayout_6.addWidget(self.widget_8)
+
+        self.verticalSpacer_2 = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+
+        self.verticalLayout_6.addItem(self.verticalSpacer_2)
+
         self.RefContext_ROI_stacked.addWidget(self.RefContext_page)
         self.ROI_page = QWidget()
         self.ROI_page.setObjectName(u"ROI_page")
@@ -200,8 +385,8 @@ class Ui_Form(object):
         self.addROI_btn.setSizePolicy(sizePolicy5)
         self.addROI_btn.setMinimumSize(QSize(50, 0))
         self.addROI_btn.setMaximumSize(QSize(50, 16777215))
-        icon = QIcon(QIcon.fromTheme(QIcon.ThemeIcon.ListAdd))
-        self.addROI_btn.setIcon(icon)
+        icon3 = QIcon(QIcon.fromTheme(QIcon.ThemeIcon.ListAdd))
+        self.addROI_btn.setIcon(icon3)
         self.addROI_btn.setIconSize(QSize(30, 30))
 
         self.horizontalLayout_4.addWidget(self.addROI_btn)
@@ -212,8 +397,8 @@ class Ui_Form(object):
         self.copyROI_btn.setSizePolicy(sizePolicy5)
         self.copyROI_btn.setMinimumSize(QSize(50, 0))
         self.copyROI_btn.setMaximumSize(QSize(50, 16777215))
-        icon1 = QIcon(QIcon.fromTheme(QIcon.ThemeIcon.EditCopy))
-        self.copyROI_btn.setIcon(icon1)
+        icon4 = QIcon(QIcon.fromTheme(QIcon.ThemeIcon.EditCopy))
+        self.copyROI_btn.setIcon(icon4)
         self.copyROI_btn.setIconSize(QSize(30, 30))
 
         self.horizontalLayout_4.addWidget(self.copyROI_btn)
@@ -224,21 +409,20 @@ class Ui_Form(object):
         self.delROI_btn.setSizePolicy(sizePolicy5)
         self.delROI_btn.setMinimumSize(QSize(48, 0))
         self.delROI_btn.setMaximumSize(QSize(50, 16777215))
-        icon2 = QIcon(QIcon.fromTheme(QIcon.ThemeIcon.EditDelete))
-        self.delROI_btn.setIcon(icon2)
+        icon5 = QIcon(QIcon.fromTheme(QIcon.ThemeIcon.EditDelete))
+        self.delROI_btn.setIcon(icon5)
         self.delROI_btn.setIconSize(QSize(30, 30))
 
         self.horizontalLayout_4.addWidget(self.delROI_btn)
 
-        self.Save_btn = QPushButton(self.ROI_settings_bar)
-        self.Save_btn.setObjectName(u"Save_btn")
-        sizePolicy5.setHeightForWidth(self.Save_btn.sizePolicy().hasHeightForWidth())
-        self.Save_btn.setSizePolicy(sizePolicy5)
-        icon3 = QIcon(QIcon.fromTheme(QIcon.ThemeIcon.DocumentSave))
-        self.Save_btn.setIcon(icon3)
-        self.Save_btn.setIconSize(QSize(30, 30))
+        self.saveROI_btn = QPushButton(self.ROI_settings_bar)
+        self.saveROI_btn.setObjectName(u"saveROI_btn")
+        sizePolicy5.setHeightForWidth(self.saveROI_btn.sizePolicy().hasHeightForWidth())
+        self.saveROI_btn.setSizePolicy(sizePolicy5)
+        self.saveROI_btn.setIcon(icon1)
+        self.saveROI_btn.setIconSize(QSize(30, 30))
 
-        self.horizontalLayout_4.addWidget(self.Save_btn)
+        self.horizontalLayout_4.addWidget(self.saveROI_btn)
 
         self.horizontalSpacer_3 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
@@ -247,10 +431,30 @@ class Ui_Form(object):
 
         self.verticalLayout_5.addWidget(self.ROI_settings_bar)
 
-        self.ROI_settings_widgets = QWidget(self.ROI_page)
-        self.ROI_settings_widgets.setObjectName(u"ROI_settings_widgets")
+        self.widget = QWidget(self.ROI_page)
+        self.widget.setObjectName(u"widget")
+        sizePolicy4.setHeightForWidth(self.widget.sizePolicy().hasHeightForWidth())
+        self.widget.setSizePolicy(sizePolicy4)
+        self.widget.setMinimumSize(QSize(0, 50))
+        self.widget.setMaximumSize(QSize(16777215, 50))
+        self.horizontalLayout_5 = QHBoxLayout(self.widget)
+        self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
+        self.label_2 = QLabel(self.widget)
+        self.label_2.setObjectName(u"label_2")
 
-        self.verticalLayout_5.addWidget(self.ROI_settings_widgets)
+        self.horizontalLayout_5.addWidget(self.label_2)
+
+        self.ROIs_filename_edit = QLineEdit(self.widget)
+        self.ROIs_filename_edit.setObjectName(u"ROIs_filename_edit")
+
+        self.horizontalLayout_5.addWidget(self.ROIs_filename_edit)
+
+
+        self.verticalLayout_5.addWidget(self.widget)
+
+        self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+
+        self.verticalLayout_5.addItem(self.verticalSpacer)
 
         self.RefContext_ROI_stacked.addWidget(self.ROI_page)
 
@@ -287,9 +491,19 @@ class Ui_Form(object):
         self.label.setText(QCoreApplication.translate("Form", u"TextLabel", None))
         self.RefContext_btn.setText(QCoreApplication.translate("Form", u"RefContext", None))
         self.ROIs_btn.setText(QCoreApplication.translate("Form", u"ROIs", None))
+        self.loadRefContext_btn.setText("")
+        self.saveRefContext_btn.setText("")
+        self.label_3.setText(QCoreApplication.translate("Form", u"Filename:", None))
+        self.label_4.setText(QCoreApplication.translate("Form", u"Ref_img_name:", None))
+        self.label_5.setText(QCoreApplication.translate("Form", u"Ref_bin_img_name:", None))
+        self.select_RefContext_params_btn.setText("")
+        self.label_6.setText(QCoreApplication.translate("Form", u"Params:", None))
+        self.label_7.setText(QCoreApplication.translate("Form", u"bin_thereshold:", None))
+        self.label_8.setText(QCoreApplication.translate("Form", u"min_contour_length:", None))
         self.addROI_btn.setText("")
         self.copyROI_btn.setText("")
         self.delROI_btn.setText("")
-        self.Save_btn.setText("")
+        self.saveROI_btn.setText("")
+        self.label_2.setText(QCoreApplication.translate("Form", u"Filename:", None))
     # retranslateUi
 

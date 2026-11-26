@@ -24,6 +24,10 @@ class MainWindow(QMainWindow):
             self._on_refcontext_rois_btn_clicked
         )
 
+        # --- Save buttons ---
+        self.ui.saveRefContext_btn.clicked.connect(self._on_save_refcontext)
+        self.ui.saveROI_btn.clicked.connect(self._on_save_roi)
+
         self.ui.validation_page_btn.setChecked(True)
         self.ui.validation_settings_stacked.setCurrentIndex(0)
 
@@ -37,3 +41,44 @@ class MainWindow(QMainWindow):
     @Slot(int)
     def _on_refcontext_rois_btn_clicked(self, page_id: int):
         self.ui.RefContext_ROI_stacked.setCurrentIndex(page_id)
+
+    # ------------------------------------------------------------------
+    # Save handlers
+    # ------------------------------------------------------------------
+    @Slot()
+    def _on_save_refcontext(self):
+        """Собирает значения полей RefContext и пишет их в лог-бар."""
+        fields = {
+            "RefContext/Filename":
+                self.ui.RefContext_filename_edit.text(),
+            "RefContext/Ref_img_name":
+                self.ui.Ref_img_name_edit.text(),
+            "RefContext/Ref_bin_img_name":
+                self.ui.Ref_bin_img_name_edit.text(),
+            "RefContext/bin_thereshold":
+                self.ui.Ref_context_bin_thereshold_edit.text(),
+            "RefContext/min_contour_length":
+                self.ui.RefContext_min_contour_length_edit.text(),
+        }
+        self._log_section("Save RefContext", fields)
+
+    @Slot()
+    def _on_save_roi(self):
+        """Собирает значения полей ROIs и пишет их в лог-бар."""
+        fields = {
+            "ROIs/Filename":
+                self.ui.ROIs_filename_edit.text(),
+        }
+        self._log_section("Save ROIs", fields)
+
+    # ------------------------------------------------------------------
+    # Helpers
+    # ------------------------------------------------------------------
+    def _log_section(self, title: str, fields: dict):
+        """Форматирует блок полей и добавляет его в log_bar_panel."""
+        lines = [f"=== {title} ==="]
+        for key, value in fields.items():
+            shown = value if value else "<empty>"
+            lines.append(f"  {key}: {shown}")
+        lines.append("")  # пустая строка-разделитель
+        self.ui.log_bar_panel.appendPlainText("\n".join(lines))
