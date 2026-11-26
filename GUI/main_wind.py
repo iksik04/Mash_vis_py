@@ -24,7 +24,7 @@ class Ui_Form(object):
     def setupUi(self, Form):
         if not Form.objectName():
             Form.setObjectName(u"Form")
-        Form.resize(1740, 1080)
+        Form.resize(1740, 841)
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -77,7 +77,11 @@ class Ui_Form(object):
 
         self.verticalLayout.addWidget(self.main_bar)
 
-        self.validation_settings_stacked = QStackedWidget(self.centralwidget)
+        self.splitter_2 = QSplitter(self.centralwidget)
+        self.splitter_2.setObjectName(u"splitter_2")
+        self.splitter_2.setOrientation(Qt.Orientation.Vertical)
+        self.splitter_2.setChildrenCollapsible(False)
+        self.validation_settings_stacked = QStackedWidget(self.splitter_2)
         self.validation_settings_stacked.setObjectName(u"validation_settings_stacked")
         sizePolicy3 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
         sizePolicy3.setHorizontalStretch(0)
@@ -108,6 +112,7 @@ class Ui_Form(object):
         sizePolicy.setHeightForWidth(self.splitter.sizePolicy().hasHeightForWidth())
         self.splitter.setSizePolicy(sizePolicy)
         self.splitter.setOrientation(Qt.Orientation.Horizontal)
+        self.splitter.setChildrenCollapsible(False)
         self.label = QLabel(self.splitter)
         self.label.setObjectName(u"label")
         sizePolicy.setHeightForWidth(self.label.sizePolicy().hasHeightForWidth())
@@ -465,14 +470,13 @@ class Ui_Form(object):
         self.verticalLayout_2.addWidget(self.splitter)
 
         self.validation_settings_stacked.addWidget(self.settings_page)
-
-        self.verticalLayout.addWidget(self.validation_settings_stacked)
-
-        self.log_bar_panel = QPlainTextEdit(self.centralwidget)
+        self.splitter_2.addWidget(self.validation_settings_stacked)
+        self.log_bar_panel = QPlainTextEdit(self.splitter_2)
         self.log_bar_panel.setObjectName(u"log_bar_panel")
-        self.log_bar_panel.setMaximumSize(QSize(16777215, 100))
+        self.log_bar_panel.setMaximumSize(QSize(16777215, 500))
+        self.splitter_2.addWidget(self.log_bar_panel)
 
-        self.verticalLayout.addWidget(self.log_bar_panel)
+        self.verticalLayout.addWidget(self.splitter_2)
 
         Form.setCentralWidget(self.centralwidget)
 
