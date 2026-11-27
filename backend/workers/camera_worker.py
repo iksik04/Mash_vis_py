@@ -18,6 +18,13 @@ class _CaptureThread(QThread):
         self._height = height
         self._fps = fps
         self._running = False
+        self._paused = False
+
+    def pause(self):
+        self._paused = True
+
+    def resume(self):
+        self._paused = False
 
     def run(self):
         cap = cv2.VideoCapture(self._cam_index)
@@ -35,10 +42,10 @@ class _CaptureThread(QThread):
                 ok, frame = cap.read()
                 if not ok or frame is None:
                     self.error.emit("Error: failed to read a frame from the camera.")
-                    # Do not terminate immediately; give the camera a chance to recover.
                     self.msleep(50)
                     continue
-                self.frame_ready.emit(frame)
+                if not self._paused:
+                    self.frame_ready.emit(frame)
                 self.msleep(interval_ms)
         finally:
             cap.release()
@@ -91,3 +98,9 @@ class CameraWorker(QObject):
         if self._thread.isRunning():
             self._thread.stop()
             self._thread.wait(2000)
+
+    def pause(self):
+        self._thread.pause()
+
+    def resume(self):
+        self._thread.resume()
