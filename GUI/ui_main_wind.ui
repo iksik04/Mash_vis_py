@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Form</class>
- <widget class="QMainWindow" name="Form">
+ <class>mainWindow</class>
+ <widget class="QMainWindow" name="mainWindow">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -194,7 +194,7 @@
            <property name="childrenCollapsible">
             <bool>false</bool>
            </property>
-           <widget class="QLabel" name="label">
+           <widget class="QLabel" name="main_img">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
               <horstretch>0</horstretch>
@@ -269,7 +269,7 @@
                  </spacer>
                 </item>
                 <item>
-                 <widget class="QPushButton" name="RefContext_btn">
+                 <widget class="QPushButton" name="RefContext_page_btn">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
                     <horstretch>0</horstretch>
@@ -291,7 +291,7 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QPushButton" name="ROIs_btn">
+                 <widget class="QPushButton" name="ROIs_page_btn">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
                     <horstretch>0</horstretch>
@@ -328,6 +328,9 @@
                  <width>1000</width>
                  <height>16777215</height>
                 </size>
+               </property>
+               <property name="currentIndex">
+                <number>0</number>
                </property>
                <widget class="QWidget" name="RefContext_page">
                 <layout class="QVBoxLayout" name="verticalLayout_6">
@@ -526,7 +529,7 @@
                      </widget>
                     </item>
                     <item>
-                     <widget class="QLineEdit" name="Ref_img_name_edit"/>
+                     <widget class="QLineEdit" name="ref_img_name_edit"/>
                     </item>
                    </layout>
                   </widget>
@@ -560,7 +563,7 @@
                      </widget>
                     </item>
                     <item>
-                     <widget class="QLineEdit" name="Ref_bin_img_name_edit"/>
+                     <widget class="QLineEdit" name="ref_bin_img_name_edit"/>
                     </item>
                    </layout>
                   </widget>

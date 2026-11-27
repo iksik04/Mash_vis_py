@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'ui_main_Wind.ui'
+## Form generated from reading UI file 'ui_main_wind.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.12.0
 ##
@@ -20,18 +20,18 @@ from PySide6.QtWidgets import (QApplication, QButtonGroup, QHBoxLayout, QLabel,
     QSizePolicy, QSpacerItem, QSplitter, QStackedWidget,
     QVBoxLayout, QWidget)
 
-class Ui_Form(object):
-    def setupUi(self, Form):
-        if not Form.objectName():
-            Form.setObjectName(u"Form")
-        Form.resize(1740, 841)
+class Ui_mainWindow(object):
+    def setupUi(self, mainWindow):
+        if not mainWindow.objectName():
+            mainWindow.setObjectName(u"mainWindow")
+        mainWindow.resize(1740, 841)
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(Form.sizePolicy().hasHeightForWidth())
-        Form.setSizePolicy(sizePolicy)
-        Form.setStyleSheet(u"QPushButton {padding: 10px 10px;}")
-        self.centralwidget = QWidget(Form)
+        sizePolicy.setHeightForWidth(mainWindow.sizePolicy().hasHeightForWidth())
+        mainWindow.setSizePolicy(sizePolicy)
+        mainWindow.setStyleSheet(u"QPushButton {padding: 10px 10px;}")
+        self.centralwidget = QWidget(mainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.verticalLayout = QVBoxLayout(self.centralwidget)
         self.verticalLayout.setSpacing(0)
@@ -51,7 +51,7 @@ class Ui_Form(object):
         self.horizontalLayout.addItem(self.horizontalSpacer)
 
         self.validation_page_btn = QPushButton(self.main_bar)
-        self.settings_validation_page_btns = QButtonGroup(Form)
+        self.settings_validation_page_btns = QButtonGroup(mainWindow)
         self.settings_validation_page_btns.setObjectName(u"settings_validation_page_btns")
         self.settings_validation_page_btns.addButton(self.validation_page_btn)
         self.validation_page_btn.setObjectName(u"validation_page_btn")
@@ -113,12 +113,12 @@ class Ui_Form(object):
         self.splitter.setSizePolicy(sizePolicy)
         self.splitter.setOrientation(Qt.Orientation.Horizontal)
         self.splitter.setChildrenCollapsible(False)
-        self.label = QLabel(self.splitter)
-        self.label.setObjectName(u"label")
-        sizePolicy.setHeightForWidth(self.label.sizePolicy().hasHeightForWidth())
-        self.label.setSizePolicy(sizePolicy)
-        self.label.setMinimumSize(QSize(1000, 0))
-        self.splitter.addWidget(self.label)
+        self.main_img = QLabel(self.splitter)
+        self.main_img.setObjectName(u"main_img")
+        sizePolicy.setHeightForWidth(self.main_img.sizePolicy().hasHeightForWidth())
+        self.main_img.setSizePolicy(sizePolicy)
+        self.main_img.setMinimumSize(QSize(1000, 0))
+        self.splitter.addWidget(self.main_img)
         self.layoutWidget = QWidget(self.splitter)
         self.layoutWidget.setObjectName(u"layoutWidget")
         self.verticalLayout_4 = QVBoxLayout(self.layoutWidget)
@@ -143,28 +143,28 @@ class Ui_Form(object):
 
         self.horizontalLayout_3.addItem(self.horizontalSpacer_2)
 
-        self.RefContext_btn = QPushButton(self.settings_bar)
-        self.RefContext_ROIs_page_btns = QButtonGroup(Form)
+        self.RefContext_page_btn = QPushButton(self.settings_bar)
+        self.RefContext_ROIs_page_btns = QButtonGroup(mainWindow)
         self.RefContext_ROIs_page_btns.setObjectName(u"RefContext_ROIs_page_btns")
-        self.RefContext_ROIs_page_btns.addButton(self.RefContext_btn)
-        self.RefContext_btn.setObjectName(u"RefContext_btn")
+        self.RefContext_ROIs_page_btns.addButton(self.RefContext_page_btn)
+        self.RefContext_page_btn.setObjectName(u"RefContext_page_btn")
         sizePolicy5 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
         sizePolicy5.setHorizontalStretch(0)
         sizePolicy5.setVerticalStretch(0)
-        sizePolicy5.setHeightForWidth(self.RefContext_btn.sizePolicy().hasHeightForWidth())
-        self.RefContext_btn.setSizePolicy(sizePolicy5)
-        self.RefContext_btn.setMinimumSize(QSize(100, 0))
+        sizePolicy5.setHeightForWidth(self.RefContext_page_btn.sizePolicy().hasHeightForWidth())
+        self.RefContext_page_btn.setSizePolicy(sizePolicy5)
+        self.RefContext_page_btn.setMinimumSize(QSize(100, 0))
 
-        self.horizontalLayout_3.addWidget(self.RefContext_btn)
+        self.horizontalLayout_3.addWidget(self.RefContext_page_btn)
 
-        self.ROIs_btn = QPushButton(self.settings_bar)
-        self.RefContext_ROIs_page_btns.addButton(self.ROIs_btn)
-        self.ROIs_btn.setObjectName(u"ROIs_btn")
-        sizePolicy5.setHeightForWidth(self.ROIs_btn.sizePolicy().hasHeightForWidth())
-        self.ROIs_btn.setSizePolicy(sizePolicy5)
-        self.ROIs_btn.setMinimumSize(QSize(100, 0))
+        self.ROIs_page_btn = QPushButton(self.settings_bar)
+        self.RefContext_ROIs_page_btns.addButton(self.ROIs_page_btn)
+        self.ROIs_page_btn.setObjectName(u"ROIs_page_btn")
+        sizePolicy5.setHeightForWidth(self.ROIs_page_btn.sizePolicy().hasHeightForWidth())
+        self.ROIs_page_btn.setSizePolicy(sizePolicy5)
+        self.ROIs_page_btn.setMinimumSize(QSize(100, 0))
 
-        self.horizontalLayout_3.addWidget(self.ROIs_btn)
+        self.horizontalLayout_3.addWidget(self.ROIs_page_btn)
 
 
         self.verticalLayout_4.addWidget(self.settings_bar)
@@ -258,10 +258,10 @@ class Ui_Form(object):
 
         self.horizontalLayout_7.addWidget(self.label_4)
 
-        self.Ref_img_name_edit = QLineEdit(self.widget_4)
-        self.Ref_img_name_edit.setObjectName(u"Ref_img_name_edit")
+        self.ref_img_name_edit = QLineEdit(self.widget_4)
+        self.ref_img_name_edit.setObjectName(u"ref_img_name_edit")
 
-        self.horizontalLayout_7.addWidget(self.Ref_img_name_edit)
+        self.horizontalLayout_7.addWidget(self.ref_img_name_edit)
 
 
         self.verticalLayout_6.addWidget(self.widget_4)
@@ -279,10 +279,10 @@ class Ui_Form(object):
 
         self.horizontalLayout_8.addWidget(self.label_5)
 
-        self.Ref_bin_img_name_edit = QLineEdit(self.widget_5)
-        self.Ref_bin_img_name_edit.setObjectName(u"Ref_bin_img_name_edit")
+        self.ref_bin_img_name_edit = QLineEdit(self.widget_5)
+        self.ref_bin_img_name_edit.setObjectName(u"ref_bin_img_name_edit")
 
-        self.horizontalLayout_8.addWidget(self.Ref_bin_img_name_edit)
+        self.horizontalLayout_8.addWidget(self.ref_bin_img_name_edit)
 
 
         self.verticalLayout_6.addWidget(self.widget_5)
@@ -478,36 +478,37 @@ class Ui_Form(object):
 
         self.verticalLayout.addWidget(self.splitter_2)
 
-        Form.setCentralWidget(self.centralwidget)
+        mainWindow.setCentralWidget(self.centralwidget)
 
-        self.retranslateUi(Form)
+        self.retranslateUi(mainWindow)
 
         self.validation_settings_stacked.setCurrentIndex(1)
+        self.RefContext_ROI_stacked.setCurrentIndex(0)
 
 
-        QMetaObject.connectSlotsByName(Form)
+        QMetaObject.connectSlotsByName(mainWindow)
     # setupUi
 
-    def retranslateUi(self, Form):
-        Form.setWindowTitle(QCoreApplication.translate("Form", u"Form", None))
-        self.validation_page_btn.setText(QCoreApplication.translate("Form", u"Validation", None))
-        self.settings_page_btn.setText(QCoreApplication.translate("Form", u"Settings", None))
-        self.label.setText(QCoreApplication.translate("Form", u"TextLabel", None))
-        self.RefContext_btn.setText(QCoreApplication.translate("Form", u"RefContext", None))
-        self.ROIs_btn.setText(QCoreApplication.translate("Form", u"ROIs", None))
+    def retranslateUi(self, mainWindow):
+        mainWindow.setWindowTitle(QCoreApplication.translate("mainWindow", u"Form", None))
+        self.validation_page_btn.setText(QCoreApplication.translate("mainWindow", u"Validation", None))
+        self.settings_page_btn.setText(QCoreApplication.translate("mainWindow", u"Settings", None))
+        self.main_img.setText(QCoreApplication.translate("mainWindow", u"TextLabel", None))
+        self.RefContext_page_btn.setText(QCoreApplication.translate("mainWindow", u"RefContext", None))
+        self.ROIs_page_btn.setText(QCoreApplication.translate("mainWindow", u"ROIs", None))
         self.loadRefContext_btn.setText("")
         self.saveRefContext_btn.setText("")
-        self.label_3.setText(QCoreApplication.translate("Form", u"Filename:", None))
-        self.label_4.setText(QCoreApplication.translate("Form", u"Ref_img_name:", None))
-        self.label_5.setText(QCoreApplication.translate("Form", u"Ref_bin_img_name:", None))
+        self.label_3.setText(QCoreApplication.translate("mainWindow", u"Filename:", None))
+        self.label_4.setText(QCoreApplication.translate("mainWindow", u"Ref_img_name:", None))
+        self.label_5.setText(QCoreApplication.translate("mainWindow", u"Ref_bin_img_name:", None))
         self.select_RefContext_params_btn.setText("")
-        self.label_6.setText(QCoreApplication.translate("Form", u"Params:", None))
-        self.label_7.setText(QCoreApplication.translate("Form", u"bin_thereshold:", None))
-        self.label_8.setText(QCoreApplication.translate("Form", u"min_contour_length:", None))
+        self.label_6.setText(QCoreApplication.translate("mainWindow", u"Params:", None))
+        self.label_7.setText(QCoreApplication.translate("mainWindow", u"bin_thereshold:", None))
+        self.label_8.setText(QCoreApplication.translate("mainWindow", u"min_contour_length:", None))
         self.addROI_btn.setText("")
         self.copyROI_btn.setText("")
         self.delROI_btn.setText("")
         self.saveROI_btn.setText("")
-        self.label_2.setText(QCoreApplication.translate("Form", u"Filename:", None))
+        self.label_2.setText(QCoreApplication.translate("mainWindow", u"Filename:", None))
     # retranslateUi
 
