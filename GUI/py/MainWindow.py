@@ -103,10 +103,6 @@ class MainWindow(QMainWindow):
         self.ui.log_bar_panel.appendPlainText("load_refcontext_btn")
 
     @Slot()
-    def _on_save_refcontext(self):
-        self._close_ref_session()
-
-    @Slot()
     def _on_select_refcontext_params(self):
         """
         Start interactive RefContext tuning:
