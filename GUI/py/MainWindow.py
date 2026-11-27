@@ -2,6 +2,8 @@ from PySide6.QtWidgets import QMainWindow
 from PySide6.QtCore import Slot
 
 from ..main_wind import Ui_mainWindow
+from backend import img_process as ip
+from backend.workers.camera_worker import CameraWorker
 
 
 class MainWindow(QMainWindow):
@@ -10,8 +12,11 @@ class MainWindow(QMainWindow):
         self.ui = Ui_mainWindow()
         self.ui.setupUi(self)
 
+        self._show_live = True
+
         self._connect_signals()
         self._setup_initial_state()
+        self._cap_setup()
 
     # ------------------------------------------------------------------
     # Setup
@@ -53,6 +58,13 @@ class MainWindow(QMainWindow):
         self.ui.RefContext_page_btn.setChecked(True)
         self.ui.RefContext_ROI_stacked.setCurrentIndex(0)
 
+    def _cap_setup(self):
+        """Start cap """
+        self.camera = CameraWorker(parent=self)
+        self.camera.frame_ready.connect(self._on_frame_ready)
+        self.camera.error.connect(self._on_camera_error)
+        self.camera.start()
+
     # ------------------------------------------------------------------
     # Page switching
     # ------------------------------------------------------------------
@@ -70,17 +82,18 @@ class MainWindow(QMainWindow):
     @Slot()
     def _on_load_refcontext(self):
         """"""
-        pass
+        self.ui.log_bar_panel.appendPlainText("load_refcontext_btn")
 
     @Slot()
     def _on_save_refcontext(self):
         """"""
-        pass
+        for i in range(1,20):
+            self.ui.log_bar_panel.appendPlainText("save_refcontext_btn")
 
     @Slot()
     def _on_select_refcontext_params(self):
         """"""
-        pass
+        self.ui.log_bar_panel.appendPlainText("select_refcontext_params_btn")
 
     # ------------------------------------------------------------------
     # ROI handlers
@@ -88,19 +101,36 @@ class MainWindow(QMainWindow):
     @Slot()
     def _on_add_roi(self):
         """"""
-        pass
+        self.ui.log_bar_panel.appendPlainText("add_roi_btn")
 
     @Slot()
     def _on_copy_roi(self):
         """"""
-        pass
+        self.ui.log_bar_panel.appendPlainText("copy_roi_btn")
 
     @Slot()
     def _on_delete_roi(self):
         """"""
-        pass
+        self.ui.log_bar_panel.appendPlainText("delete_roi_btn")
 
     @Slot()
     def _on_save_roi(self):
         """"""
-        pass
+        self.ui.log_bar_panel.appendPlainText("save_roi_btn")
+
+    @Slot(object)
+    def _on_frame_ready(self, frame):
+        if not self._show_live:
+            return
+        pixmap = ip.cv2qt_img(frame)
+        self.ui.main_img.setPixmap(
+            ip.scale_pixmap(pixmap, self.ui.main_img.size())
+        )
+
+    @Slot(str)
+    def _on_camera_error(self, msg: str):
+        self.ui.log_bar_panel.appendPlainText(msg)
+
+    def closeEvent(self, event):
+        self.camera.stop()
+        super().closeEvent(event)
