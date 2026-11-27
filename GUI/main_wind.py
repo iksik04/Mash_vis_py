@@ -338,8 +338,18 @@ class Ui_mainWindow(object):
 
         self.Ref_context_bin_thereshold_edit = QLineEdit(self.widget_7)
         self.Ref_context_bin_thereshold_edit.setObjectName(u"Ref_context_bin_thereshold_edit")
+        sizePolicy9 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        sizePolicy9.setHorizontalStretch(0)
+        sizePolicy9.setVerticalStretch(0)
+        sizePolicy9.setHeightForWidth(self.Ref_context_bin_thereshold_edit.sizePolicy().hasHeightForWidth())
+        self.Ref_context_bin_thereshold_edit.setSizePolicy(sizePolicy9)
+        self.Ref_context_bin_thereshold_edit.setMaximumSize(QSize(100, 16777215))
 
         self.horizontalLayout_10.addWidget(self.Ref_context_bin_thereshold_edit)
+
+        self.horizontalSpacer_6 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_10.addItem(self.horizontalSpacer_6)
 
 
         self.verticalLayout_6.addWidget(self.widget_7)
@@ -354,13 +364,20 @@ class Ui_mainWindow(object):
         self.horizontalLayout_11.setObjectName(u"horizontalLayout_11")
         self.label_8 = QLabel(self.widget_8)
         self.label_8.setObjectName(u"label_8")
+        sizePolicy3.setHeightForWidth(self.label_8.sizePolicy().hasHeightForWidth())
+        self.label_8.setSizePolicy(sizePolicy3)
 
         self.horizontalLayout_11.addWidget(self.label_8)
 
         self.RefContext_min_contour_length_edit = QLineEdit(self.widget_8)
         self.RefContext_min_contour_length_edit.setObjectName(u"RefContext_min_contour_length_edit")
+        self.RefContext_min_contour_length_edit.setMaximumSize(QSize(100, 16777215))
 
         self.horizontalLayout_11.addWidget(self.RefContext_min_contour_length_edit)
+
+        self.horizontalSpacer_5 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_11.addItem(self.horizontalSpacer_5)
 
 
         self.verticalLayout_6.addWidget(self.widget_8)

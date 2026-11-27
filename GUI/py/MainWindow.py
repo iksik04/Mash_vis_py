@@ -87,8 +87,7 @@ class MainWindow(QMainWindow):
     @Slot()
     def _on_save_refcontext(self):
         """"""
-        for i in range(1,20):
-            self.ui.log_bar_panel.appendPlainText("save_refcontext_btn")
+        self.ui.log_bar_panel.appendPlainText("save_refcontext_btn")
 
     @Slot()
     def _on_select_refcontext_params(self):
