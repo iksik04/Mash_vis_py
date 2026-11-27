@@ -53,12 +53,17 @@ class MainWindow(QMainWindow):
         self.ui.delROI_btn.clicked.connect(self._on_delete_roi)
         self.ui.saveROI_btn.clicked.connect(self._on_save_roi)
 
-        # --- RefContext params ---
-        self.ui.Ref_context_bin_thereshold_edit.returnPressed.connect(
-            self._on_ref_params_changed
+        # slider: valueChanged(int)
+        self.ui.Ref_context_bin_thereshold_slider.valueChanged.connect(
+            self._on_Ref_context_bin_thereshold_slider_changed
         )
+        # threshold field: returnPressed
+        self.ui.Ref_context_bin_thereshold_edit.returnPressed.connect(
+            self._on_Ref_context_bin_thereshold_edit
+        )
+        # min_contour_length field
         self.ui.RefContext_min_contour_length_edit.returnPressed.connect(
-            self._on_ref_params_changed
+            self._on_RefContext_min_contour_length_edit
         )
 
     def _setup_initial_state(self):
@@ -131,9 +136,9 @@ class MainWindow(QMainWindow):
             return
 
         # seed from form fields if they have values, else keep defaults
-        bt = self._read_int_or(self.ui.Ref_context_bin_thereshold_edit,
+        bt = self._read_int_or(self.ui.Ref_context_bin_thereshold_edit.text().strip(),
                             session.bin_threshold)
-        ml = self._read_int_or(self.ui.RefContext_min_contour_length_edit,
+        ml = self._read_int_or(self.ui.RefContext_min_contour_length_edit.text().strip(),
                                 session.min_contour_len)
         try:
             session.set_params(bt, ml)
@@ -147,24 +152,65 @@ class MainWindow(QMainWindow):
             f"(bin={session.bin_threshold}, min_len={session.min_contour_len})"
         )
 
+    @Slot(int)
+    def _on_Ref_context_bin_thereshold_slider_changed(self, value: int):
+        """Slider -> edit field -> reprocess."""
+        # 1) sync the text field
+        self.ui.Ref_context_bin_thereshold_edit.setText(str(value))
+        # 2) reprocess with the new threshold, min_len taken from the form
+        ml = self._read_int_or(
+            self.ui.RefContext_min_contour_length_edit.text().strip(),
+            self._ref_session.min_contour_len if self._ref_session else 0,
+        )
+        self._on_ref_params_changed(bt=value, ml=ml)
+
     @Slot()
-    def _on_ref_params_changed(self):
+    def _on_Ref_context_bin_thereshold_edit(self):
+        """Threshold edit field -> slider -> reprocess."""
+        txt = self.ui.Ref_context_bin_thereshold_edit.text().strip()
+        default = self._ref_session.bin_threshold if self._ref_session else 127
+        bt = self._read_int_or(txt, default)
+        bt = max(0, min(255, bt))  # slider is limited to 0..255
+
+        # 1) sync the slider (guard against the valueChanged feedback loop)
+        self.ui.Ref_context_bin_thereshold_slider.blockSignals(True)
+        self.ui.Ref_context_bin_thereshold_slider.setValue(bt)
+        self.ui.Ref_context_bin_thereshold_slider.blockSignals(False)
+
+        # 2) reprocess
+        ml = self._read_int_or(
+            self.ui.RefContext_min_contour_length_edit.text().strip(),
+            self._ref_session.min_contour_len if self._ref_session else 0,
+        )
+        self._on_ref_params_changed(bt=bt, ml=ml)
+
+    @Slot()
+    def _on_RefContext_min_contour_length_edit(self):
+        """min_contour_length edit field -> reprocess."""
+        default = self._ref_session.min_contour_len if self._ref_session else 0
+        ml = self._read_int_or(
+            self.ui.RefContext_min_contour_length_edit.text().strip(), default
+        )
+        ml = max(0, ml)
+        # take the current threshold from the slider (it is always in sync with the field)
+        bt = self.ui.Ref_context_bin_thereshold_slider.value()
+        self._on_ref_params_changed(bt=bt, ml=ml)
+        
+    def _on_ref_params_changed(self, bt: int, ml: int):
+        """1) reprocess with the new params; render to screen."""
         if self._ref_session is None:
             return
-        bt = self._read_int_or(self.ui.Ref_context_bin_thereshold_edit,
-                            self._ref_session.bin_threshold)
-        ml = self._read_int_or(self.ui.RefContext_min_contour_length_edit,
-                                self._ref_session.min_contour_len)
+
         try:
             changed = self._ref_session.set_params(bt, ml)
         except Exception as e:
             self.ui.log_bar_panel.appendPlainText(f"--ERR: {e}")
             return
-        if changed:
-            self._render_ref_preview()
-            self.ui.log_bar_panel.appendPlainText(
-                f"--MES: params -> bin={bt}, min_len={ml}"
-            )
+
+        if not changed:
+            return
+        
+        self._render_ref_preview()
 
     def _render_ref_preview(self):
         if self._ref_session is None:
@@ -228,8 +274,8 @@ class MainWindow(QMainWindow):
         if resume_live:
             self._unfreeze_live()
 
-    def _read_int_or(self, line_edit, default: int) -> int:
-        txt = line_edit.text().strip()
+    def _read_int_or(self, value, default: int) -> int:
+        txt = value
         if not txt:
             return default
         try:

@@ -17,8 +17,8 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QButtonGroup, QHBoxLayout, QLabel,
     QLineEdit, QMainWindow, QPlainTextEdit, QPushButton,
-    QScrollArea, QSizePolicy, QSpacerItem, QSplitter,
-    QStackedWidget, QVBoxLayout, QWidget)
+    QScrollArea, QSizePolicy, QSlider, QSpacerItem,
+    QSplitter, QStackedWidget, QVBoxLayout, QWidget)
 
 class Ui_mainWindow(object):
     def setupUi(self, mainWindow):
@@ -347,6 +347,21 @@ class Ui_mainWindow(object):
 
         self.horizontalLayout_10.addWidget(self.Ref_context_bin_thereshold_edit)
 
+        self.Ref_context_bin_thereshold_slider = QSlider(self.widget_7)
+        self.Ref_context_bin_thereshold_slider.setObjectName(u"Ref_context_bin_thereshold_slider")
+        sizePolicy8.setHeightForWidth(self.Ref_context_bin_thereshold_slider.sizePolicy().hasHeightForWidth())
+        self.Ref_context_bin_thereshold_slider.setSizePolicy(sizePolicy8)
+        self.Ref_context_bin_thereshold_slider.setMinimumSize(QSize(200, 0))
+        self.Ref_context_bin_thereshold_slider.setMaximumSize(QSize(200, 16777215))
+        self.Ref_context_bin_thereshold_slider.setMaximum(255)
+        self.Ref_context_bin_thereshold_slider.setValue(127)
+        self.Ref_context_bin_thereshold_slider.setTracking(True)
+        self.Ref_context_bin_thereshold_slider.setOrientation(Qt.Orientation.Horizontal)
+        self.Ref_context_bin_thereshold_slider.setTickPosition(QSlider.TickPosition.TicksAbove)
+        self.Ref_context_bin_thereshold_slider.setTickInterval(10)
+
+        self.horizontalLayout_10.addWidget(self.Ref_context_bin_thereshold_slider)
+
         self.horizontalSpacer_6 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self.horizontalLayout_10.addItem(self.horizontalSpacer_6)
@@ -540,7 +555,9 @@ class Ui_mainWindow(object):
         self.select_RefContext_params_btn.setText("")
         self.label_6.setText(QCoreApplication.translate("mainWindow", u"Params:", None))
         self.label_7.setText(QCoreApplication.translate("mainWindow", u"bin_thereshold:", None))
+        self.Ref_context_bin_thereshold_edit.setText(QCoreApplication.translate("mainWindow", u"127", None))
         self.label_8.setText(QCoreApplication.translate("mainWindow", u"min_contour_length:", None))
+        self.RefContext_min_contour_length_edit.setText(QCoreApplication.translate("mainWindow", u"500", None))
         self.addROI_btn.setText("")
         self.copyROI_btn.setText("")
         self.delROI_btn.setText("")
