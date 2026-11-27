@@ -5,6 +5,8 @@ from ..main_wind import Ui_mainWindow
 from backend import img_process as ip
 from backend.workers.camera_worker import CameraWorker
 from backend.sessions.ref_context_session import RefContextSession
+from backend import json_process as js
+from backend import constants as c
 
 
 class MainWindow(QMainWindow):
@@ -285,3 +287,43 @@ class MainWindow(QMainWindow):
                 f"--WARN: cannot parse int from '{txt}', using {default}"
             )
             return default
+
+
+    @Slot()
+    def _on_save_refcontext(self):
+        if self._ref_session is None:
+            self.ui.log_bar_panel.appendPlainText(
+                "--ERR: save_refcontext: no active session "
+                "(click 'select params' first)"
+            )
+            return
+
+        json_name  = self.ui.RefContext_filename_edit.text().strip() \
+                    or c.REF_CONTEXT_JSON_NAME
+        ref_img    = self.ui.ref_img_name_edit.text().strip() \
+                    or c.REF_IMG_NAME
+        ref_bin    = self.ui.ref_bin_img_name_edit.text().strip() \
+                    or c.REF_BIN_IMG_NAME
+
+        # normalize extension
+        if not json_name.lower().endswith(".json"):
+            json_name += ".json"
+        if not ref_img.lower().endswith(".jpg"):
+            ref_img += ".jpg"
+        if not ref_bin.lower().endswith(".jpg"):
+            ref_bin += ".jpg"
+
+        try:
+            path = js.save_ref_context(
+                self._ref_session.context,
+                output_dir=c.REF_CONTEXTS_DIR,
+                json_name=json_name,
+                ref_img_name=ref_img,
+                ref_bin_img_name=ref_bin,
+            )
+        except Exception as e:
+            self.ui.log_bar_panel.appendPlainText(f"--ERR: {e}")
+            return
+
+        self.ui.log_bar_panel.appendPlainText(f"--MES: saved RefContext -> {path}")
+        self._close_ref_session()
